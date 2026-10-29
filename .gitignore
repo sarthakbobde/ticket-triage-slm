@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# data and model artefacts never go in git
+data/raw/*
+data/labeled/*
+data/processed/*
+!data/**/.gitkeep
+*.gguf
+*.safetensors
+evals/results/

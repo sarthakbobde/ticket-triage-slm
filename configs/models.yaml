@@ -1,0 +1,16 @@
+# Every model is reached through an OpenAI-compatible endpoint (ADR-004).
+# Switch models by editing this file, not code.
+
+teacher:
+  base_url: null        # TBD in ADR-005
+  model: null
+  api_key_env: TEACHER_API_KEY
+
+student_local:          # llama.cpp `llama-server` or Ollama, Step 10
+  base_url: http://localhost:8080/v1
+  model: ticket-triage-q4
+  api_key_env: null
+
+base_candidates:        # verify exact repo names on Hugging Face in Step 06
+  - TBD-1.5B-instruct
+  - TBD-3B-instruct
