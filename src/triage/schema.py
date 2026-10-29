@@ -1,6 +1,6 @@
 """The output contract. Every component validates against this.
 
-See docs/decisions/ADR-001-task-and-output-schema.md for the reasoning.
+See docs/DECISIONS.md#adr-001 for the reasoning.
 
 Changing anything here means bumping SCHEMA_VERSION and re-labelling data.
 """

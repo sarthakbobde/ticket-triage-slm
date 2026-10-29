@@ -7,7 +7,7 @@
 2. Wrote the **output schema** — `src/triage/schema.py`.
 3. Wrote the **shared prompt** — `src/triage/prompts.py`.
 4. Wrote stub scripts with TODOs pointing at the step that fills them.
-5. Wrote the first ADRs.
+5. Wrote the first ADRs in `docs/DECISIONS.md`.
 
 ## Why the schema came first
 Every later component depends on one thing: *what does a correct answer look like?*
@@ -33,8 +33,9 @@ Here the format is code (Pydantic), which gives us:
   seen real data. Designing labels without looking at data is a classic mistake.
 
 ## Decisions made
-- [ADR-001](../decisions/ADR-001-task-and-output-schema.md) — task & schema
-- [ADR-002](../decisions/ADR-002-base-model-size.md) — base model size
-- [ADR-003](../decisions/ADR-003-compute-train-in-cloud-serve-locally.md) — where to train/serve
-- [ADR-004](../decisions/ADR-004-tooling.md) — Python tooling
-- [ADR-005](../decisions/ADR-005-teacher-model.md) — teacher model (**open — needs your input**)
+- [ADR-001](../DECISIONS.md#adr-001) — task & schema
+- [ADR-002](../DECISIONS.md#adr-002) — base model size
+- [ADR-003](../DECISIONS.md#adr-003) — where to train/serve
+- [ADR-004](../DECISIONS.md#adr-004) — Python tooling
+- [ADR-005](../DECISIONS.md#adr-005) — teacher model (**open — needs your input**)
+- [ADR-006](../DECISIONS.md#adr-006) — one decision log file

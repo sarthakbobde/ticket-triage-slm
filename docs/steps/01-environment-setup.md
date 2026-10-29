@@ -18,7 +18,7 @@ gets worse, you'll want to `git diff` what changed.
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 Restart the terminal, then check: `uv --version`.
-**Why uv:** see [ADR-004](../decisions/ADR-004-tooling.md).
+**Why uv:** see [ADR-004](../DECISIONS.md#adr-004).
 
 ## 3. Create the virtual environment & install deps
 ```bash

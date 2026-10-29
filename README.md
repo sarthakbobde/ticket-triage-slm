@@ -12,7 +12,7 @@ on a laptop GPU.
 | Folder | What lives there |
 |---|---|
 | `docs/steps/` | One file per step: **what** to do, **how**, and **what you learn**. Work through them in order. |
-| `docs/decisions/` | ADRs (Architecture Decision Records): **why** each choice was made and what was rejected. |
+| `docs/DECISIONS.md` | Decision log (ADRs: Architecture Decision Records): **why** each choice was made and what was rejected. |
 | `src/triage/` | Shared library code: the output schema and prompts (the "contract"). |
 | `scripts/` | Numbered pipeline scripts: download → label → split. |
 | `notebooks/` | Training notebook that runs on Kaggle (free T4 GPUs). |
@@ -23,10 +23,10 @@ on a laptop GPU.
 
 ## Roadmap
 
-See [docs/STEPS.md](docs/STEPS.md) for the full checklist and [docs/decisions/](docs/decisions/) for the reasoning.
+See [docs/STEPS.md](docs/STEPS.md) for the full checklist and [docs/DECISIONS.md](docs/DECISIONS.md) for the reasoning.
 
 ## Hardware this was designed for
 
 - Local: NVIDIA GTX 1650 (4 GB), 16 GB RAM → **inference only** (quantized GGUF).
 - Training: Kaggle Notebooks (2× T4, 16 GB each, ~30 free GPU-hours/week).
-- See [ADR-003](docs/decisions/ADR-003-compute-train-in-cloud-serve-locally.md).
+- See [ADR-003](docs/DECISIONS.md#adr-003).

@@ -17,7 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 serve = ["fastapi>=0.111", "uvicorn>=0.30"]
 # Training deps (torch, transformers, peft, trl, bitsandbytes) are installed on Kaggle only.
-# See docs/decisions/ADR-004-tooling.md
+# See docs/DECISIONS.md#adr-004
 
 [build-system]
 requires = ["hatchling"]
