@@ -45,8 +45,27 @@ Open `docs/reports/dataset-profile.md` and look at the 10 printed tickets. Answe
 5. **Versions:** how many dataset versions are there, and do rows with missing `type` come from
    one version?
 
-## 4. Findings
-_Fill in after running._
+## 4. EDA notebook
+Open `notebooks/02_eda.ipynb` in VS Code and select the `.venv` Python kernel (top right:
+"Select Kernel" -> Python Environments -> `.venv`). Prefer the browser? Run
+`uv run --with jupyterlab jupyter lab`.
+
+Each section answers one question that **changes a decision**. Write the implication under
+each section, then copy the summary below. Decision record: [ADR-009](../DECISIONS.md#adr-009).
+
+<details><summary>👀 Spoiler: Claude's early signals from the profile report (do the EDA first!)</summary>
+
+- **16% exact duplicates** (4,497) were removed, so expect near-duplicates too (leakage risk).
+- **English has only 3 priorities** (low/medium/high); no critical/very_low. Our schema has 4.
+- **10 queues**, smallest 1.4%; the top 4 may overlap (Technical / Product / IT / Customer Service).
+- **Priority is strongly tied to queue** (Outages 71% high, General Inquiry 59% low): a
+  shortcut a model can learn without reading the ticket.
+- Text is short: p90 ≈ 160 tokens.
+
+</details>
+
+## 5. Findings
+_Fill in from the notebook's Summary section._
 
 ## What you learn
 Data profiling, stable ids, leakage, label noise, and why the label set is designed from data,

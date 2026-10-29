@@ -25,3 +25,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/triage"]
+
+[tool.uv]
+# Dev-only tools: installed by `uv sync`, not part of the triage package.
+dev-dependencies = [
+    "ipykernel>=6.29",
+    "matplotlib>=3.8",
+    "scikit-learn>=1.5",
+]

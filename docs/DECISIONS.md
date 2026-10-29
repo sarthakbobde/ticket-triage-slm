@@ -21,6 +21,7 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [006](#adr-006) | All decisions kept in one file | Accepted | 2026-10-29 |
 | [007](#adr-007) | Dataset = Tobi-Bueck/customer-support-tickets, English only | Accepted | 2026-10-29 |
 | [008](#adr-008) | Categories = dataset's top queues; priority mapped 5 → 4 levels | Proposed (finalise after profiling) | 2026-10-29 |
+| [009](#adr-009) | EDA in notebooks, pipeline in scripts; notebook tools as uv dev deps | Accepted | 2026-10-29 |
 
 ## Template
 
@@ -333,3 +334,35 @@ Final category list: _TBD after profiling._
 - ✅ Teacher and student can both be scored against an independent label source.
 - ✅ Bumps `SCHEMA_VERSION` to 1.0 and fixes the schema before any money is spent on labelling.
 - ⚠️ Merging `very_low` into `low` loses detail, but the two are rarely actionable differently.
+
+---
+
+<a id="adr-009"></a>
+## ADR-009 — Notebooks for exploration, scripts for the pipeline
+**Status:** Accepted · **Date:** 2026-10-29 · **Step:** 02
+
+### Context
+You want to do EDA interactively. Notebooks are great for exploring but bad for repeatable
+pipelines (hidden state, out-of-order cells, hard to diff or review).
+
+### Options
+1. Everything in notebooks.
+2. Everything in scripts.
+3. **Notebooks for exploration (`notebooks/`), scripts for anything the pipeline depends on (`scripts/`).**
+
+Dependencies for notebooks:
+- a. Add to core dependencies: but they're not needed to *run* the product.
+- b. Optional extra (`--extra eda`): easy to forget, and `uv sync` without it removes them.
+- c. **uv dev-dependencies**: installed by default with `uv sync`, excluded from the package.
+
+### Decision
+Option 3 + c. `ipykernel`, `matplotlib` and `scikit-learn` are dev dependencies. scikit-learn
+is also used for the TF-IDF baseline and later for eval metrics (F1, confusion matrix).
+
+Rule: if a notebook result feeds the pipeline (e.g. a filter or a mapping), move that logic
+into a script or `src/triage/` and record the decision here.
+
+### Consequences
+- ✅ Free exploration without polluting the pipeline.
+- ✅ The TF-IDF + logistic regression baseline gives a **non-LLM benchmark** for `category`/`priority`.
+- ⚠️ Notebooks with outputs make noisy git diffs. Clear outputs before committing, or accept it.
