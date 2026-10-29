@@ -6,10 +6,10 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 
 ## Phase 0 — Foundations
 - [x] 🤖 **00 Scaffold** — folder structure, schema, prompt, docs. → [00-scaffold.md](steps/00-scaffold.md)
-- [ ] 🧑 **01 Environment setup** — git, uv, venv, HF cache on E:. → [01-environment-setup.md](steps/01-environment-setup.md)
+- [x] 🧑 **01 Environment setup** — git, uv, venv, HF cache on E:. → [01-environment-setup.md](steps/01-environment-setup.md)
 
 ## Phase 1 — Data
-- [ ] 🤝 **02 Pick & explore a dataset** — find public support tickets, look at them, finalise the label set.
+- [ ] 🤝 **02 Pick & explore a dataset** — find public support tickets, look at them, finalise the label set. → [02-dataset.md](steps/02-dataset.md)
 - [ ] 🤝 **03 Label with a teacher model** — a large model produces gold JSON (distillation).
 - [ ] 🧑 **04 Clean & split** — validate JSON, dedupe, train/val/test split. Test set is frozen forever.
 

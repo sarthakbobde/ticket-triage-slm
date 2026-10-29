@@ -17,8 +17,10 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [002](#adr-002) | Base model 1.5B–3B; family picked at Step 06 | Accepted | 2026-10-29 |
 | [003](#adr-003) | Train on Kaggle, serve on laptop via GGUF | Accepted | 2026-10-29 |
 | [004](#adr-004) | uv, Pydantic, OpenAI-compatible clients everywhere | Accepted | 2026-10-29 |
-| [005](#adr-005) | Which large model labels the data | **Proposed — needs you** | — |
+| [005](#adr-005) | Teacher = Gemini; exact model chosen by a 50-ticket pilot | Accepted (model TBD at Step 03) | 2026-10-29 |
 | [006](#adr-006) | All decisions kept in one file | Accepted | 2026-10-29 |
+| [007](#adr-007) | Dataset = Tobi-Bueck/customer-support-tickets, English only | Accepted | 2026-10-29 |
+| [008](#adr-008) | Categories = dataset's top queues; priority mapped 5 → 4 levels | Proposed (finalise after profiling) | 2026-10-29 |
 
 ## Template
 
@@ -189,7 +191,7 @@ Code in `src/triage/` is importable from scripts, evals and the server alike
 
 <a id="adr-005"></a>
 ## ADR-005 — Teacher model for labelling
-**Status:** Proposed — **needs your decision before Step 03** · **Date:** — · **Step:** 03
+**Status:** Accepted: Gemini (exact model chosen by pilot in Step 03) · **Date:** 2026-10-29 · **Step:** 03
 
 ### Context
 We'll label ~2–5k tickets with a large model; the small model learns to imitate it
@@ -212,10 +214,36 @@ Read the terms of the provider you pick. For a personal learning/portfolio proje
 usually fine, but it's a real question companies ask, so note your answer here.
 
 ### Decision
-_TBD. Fill in after discussion._
+**Gemini** (you already have a key). Prices checked on ai.google.dev on 2026-10-29 for ~3k
+tickets (~1.5M input / ~0.9M output tokens):
+
+| Model | Standard | Batch API (−50%) |
+|---|---|---|
+| Gemini 2.5 Flash-Lite | ~$0.50 | ~$0.25 |
+| Gemini 3.5 Flash-Lite | ~$2.70 | ~$1.35 |
+| Gemini 3.8 Flash (promo price until 2026-12-31, then 2×) | ~$4.50 | ~$2.25 |
+| Gemini 3.1 Pro | ~$15–50 | ~$7–25 |
+| Free tier | $0, rate-limited | — |
+
+Process:
+1. **Pilot:** label the same 50 tickets with two candidates (e.g. 3.8 Flash vs 3.5 Flash-Lite).
+2. Compare each against the dataset's queue/priority labels and hand-review ~20.
+3. Pick the cheaper model unless the stronger one is clearly better.
+4. Label the full set on the free tier if its limits allow; otherwise use the Batch API.
+
+Settings: **thinking budget low/off** (thinking tokens are billed as output), temperature 0,
+JSON response mode with our schema.
+
+**Terms note:** Google's API terms restrict using outputs to develop *competing* models. This is
+a personal learning/portfolio project on a public synthetic dataset; we're not building a
+commercial model. If this ever became commercial, revisit this ADR.
 
 ### Consequences
-_TBD_
+- ✅ Expected total cost under $5, possibly $0.
+- ✅ Gemini exposes an OpenAI-compatible endpoint, so ADR-004 holds: config change only.
+- ⚠️ Free-tier prompts may be used by Google to improve its products. Acceptable here (public
+  synthetic data), never acceptable for real customer tickets.
+- ⚠️ Promo prices change after 2026-11-30 / 2026-12-31. Re-check before the full run.
 
 ---
 
@@ -239,3 +267,69 @@ Option 2. The old per-ADR files were removed; they remain in git history (commit
 - ✅ One file to read, search and review in a PR.
 - ✅ No duplicate copies to keep in sync.
 - ⚠️ The file will grow. If it ever gets unwieldy (30+ ADRs), we can split by phase with a new ADR.
+
+---
+
+<a id="adr-007"></a>
+## ADR-007 — Dataset: Tobi-Bueck/customer-support-tickets, English only
+**Status:** Accepted · **Date:** 2026-10-29 · **Step:** 02
+
+### Context
+We need realistic, email-length support tickets, ideally with some existing labels to
+sanity-check the teacher. Candidates were checked on the Hugging Face Hub on 2026-10-29.
+
+### Options
+| Dataset | Rows | Shape | Licence | Verdict |
+|---|---|---|---|---|
+| **Tobi-Bueck/customer-support-tickets** | 61.7k (28.3k en) | subject + body (median ~415 chars) + agent answer; labels: queue, priority, type, tags | CC-BY-NC-4.0 | **chosen** |
+| bitext/…customer-support-llm-chatbot | 26.9k | one-line templated chatbot messages | CDLA-Sharing-1.0 | not ticket-like |
+| Console-AI/IT-helpdesk-synthetic-tickets | 500 | IT tickets | MIT | too small |
+
+Language: English only vs English + German. German doubles eval work, and small models are
+weaker in German.
+
+### Decision
+Tobi-Bueck, **English only**. We'll sample ~3k tickets for labelling in Step 03.
+
+### Consequences
+- ✅ Existing `queue`/`priority` labels give a free agreement check for the teacher and the student.
+- ⚠️ **Synthetic data with visible label noise** (e.g. a product question filed under
+  "Returns and Exchanges"). Dataset labels are a *signal*, not ground truth.
+- ⚠️ Multiple dataset versions are merged (`version` 51 / 400), and ~13k rows lack `type`.
+- ⚠️ **Non-commercial licence**: fine for a portfolio, not for a commercial product.
+  Credit the dataset in the README.
+
+---
+
+<a id="adr-008"></a>
+## ADR-008 — Category list and priority levels (schema v1.0)
+**Status:** Proposed: finalise after reading `docs/reports/dataset-profile.md` · **Date:** 2026-10-29 · **Step:** 02
+
+### Context
+The draft schema (ADR-001) had e-commerce categories (refund, shipping…), but the dataset's
+queues are IT/SaaS-flavoured. Priority has 5 levels in the dataset vs 4 in our schema.
+
+### Options
+1. Keep the draft categories: the teacher labels everything, and dataset queues can't be compared.
+2. **Adopt the dataset's top queues** and merge the long tail into `other`.
+3. Invent a new taxonomy: same downside as 1.
+
+### Decision
+Option 2. The exact list is filled in here after profiling (6–8 queues, minimum ~2% share each,
+possibly merging queues a human can't tell apart).
+
+Priority mapping (proposed):
+
+| Dataset | Ours |
+|---|---|
+| very_low, low | low |
+| medium | medium |
+| high | high |
+| critical | urgent |
+
+Final category list: _TBD after profiling._
+
+### Consequences
+- ✅ Teacher and student can both be scored against an independent label source.
+- ✅ Bumps `SCHEMA_VERSION` to 1.0 and fixes the schema before any money is spent on labelling.
+- ⚠️ Merging `very_low` into `low` loses detail, but the two are rarely actionable differently.
