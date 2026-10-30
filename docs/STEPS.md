@@ -9,9 +9,9 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 - [x] 🧑 **01 Environment setup** — git, uv, venv, HF cache on E:. → [01-environment-setup.md](steps/01-environment-setup.md)
 
 ## Phase 1 — Data
-- [ ] 🤝 **02 Pick & explore a dataset** — find public support tickets, look at them, finalise the label set. → [02-dataset.md](steps/02-dataset.md)
-- [ ] 🤝 **03 Label with a teacher model** — a large model produces gold JSON (distillation).
-- [ ] 🧑 **04 Clean & split** — validate JSON, dedupe, train/val/test split. Test set is frozen forever.
+- [x] 🤝 **02 Pick & explore a dataset** — find public support tickets, look at them, finalise the label set. → [02-dataset.md](steps/02-dataset.md)
+- [ ] 🤝 **03 Split & label with a teacher model** — build the splits (ADR-012), pilot two teachers, label ~3.3k tickets (distillation). → [03-teacher-labels.md](steps/03-teacher-labels.md)
+- [ ] 🧑 **04 Audit labels & gold set** — hand-label the 200 gold tickets, measure teacher quality, finalise training files.
 
 ## Phase 2 — Baseline & evals (before any training!)
 - [ ] 🤝 **05 Eval harness** — metrics: JSON validity, per-field accuracy, macro-F1, latency.

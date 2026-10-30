@@ -469,8 +469,9 @@ Order matters:
 2. **Test set first:** 500 tickets, **natural distribution** (stratified on mapped category).
    It measures real-world performance and is frozen forever.
 3. **Validation:** 300 tickets, natural distribution.
-4. **Train pool:** from the rest, **capped per mapped category** (cap ≈ 600), so rare classes
-   are over-represented relative to reality but not wildly. Target ~2,500 tickets.
+4. **Train pool:** from the rest, **capped per mapped category**, so rare classes are
+   over-represented relative to reality but not wildly. Target ~2,500 tickets; the cap is
+   derived from that target (**416** per category, see `docs/reports/splits.md`).
 5. **Gold set:** 200 of the 500 test tickets, **hand-labelled by you** with the same guidelines,
    *before* looking at the teacher's labels (to avoid anchoring).
 
@@ -481,3 +482,11 @@ All splits use `SEED = 42`. Total to label with the teacher: ~3,300 tickets (cos
 - ✅ Gold set lets us measure the teacher itself, i.e. the ceiling for the student.
 - ⚠️ `hr` in a 200-ticket gold set is only ~4 tickets; report per-class results with counts.
 - ⚠️ Stratifying on noisy dataset labels is approximate, but good enough for sampling.
+
+**Amendment (2026-10-30, Step 03):**
+- The first draft said "cap ≈ 600", but 6 × 600 overshoots the ~2,500 target (and the
+  ADR-005 budget). The target wins; the cap is computed from it.
+- Splits are built **before** labelling (they decide what we pay to label), so the scripts are
+  reordered: `02_build_splits.py` → `03_label_with_teacher.py`.
+- The test set is labelled by the teacher only **after** you hand-label the gold set (Step 04),
+  so you can't anchor on the teacher's answers even by accident.

@@ -1,10 +1,19 @@
 # Every model is reached through an OpenAI-compatible endpoint (ADR-004).
 # Switch models by editing this file, not code.
 
-teacher:
-  base_url: null        # TBD in ADR-005
-  model: null
+teacher:                # ADR-005: Gemini via its OpenAI-compatible endpoint
+  base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+  model: null           # set to the pilot winner (Step 03, ADR-005)
   api_key_env: TEACHER_API_KEY
+  temperature: 0
+  reasoning_effort: low # thinking tokens are billed as output; use the lowest the model accepts
+  response_format: json_schema   # or json_object if the API rejects our schema
+  rpm: 10               # requests/minute; match your tier's limit (AI Studio -> rate limits)
+  # Pilot candidates. Verify the exact ids with `--list-models` and prices on ai.google.dev.
+  # USD per 1M tokens (standard tier); used only by the pilot report's cost estimate.
+  candidates:
+    gemini-3.8-flash:      {input: 0.0, output: 0.0}
+    gemini-3.5-flash-lite: {input: 0.0, output: 0.0}
 
 student_local:          # llama.cpp `llama-server` or Ollama, Step 10
   base_url: http://localhost:8080/v1
