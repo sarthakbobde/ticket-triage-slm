@@ -82,7 +82,7 @@ _From the notebook's outputs; each item links to the decision it feeds._
    all of General Inquiry, leaving none for testing ([ADR-012](../DECISIONS.md#adr-012)).
 4. **Final categories (section 5, confusable queues):** IT / Technical and Customer Service /
    Sales / General Inquiry / Returns can't be told apart from the text
-   ([queue similarity](image.png); TF-IDF macro-F1 only 0.58 on 10 queues). Merged to 6:
+   ([queue similarity](../reports/queue-similarity.png); TF-IDF macro-F1 only 0.58 on 10 queues). Merged to 6:
    `technical`, `product`, `billing`, `outage`, `customer_service`, `hr`; macro-F1 0.66
    ([ADR-010](../DECISIONS.md#adr-010)).
 5. **Priority levels:** `low`, `medium`, `high` only (no `urgent` in English data). Priority is
@@ -113,7 +113,7 @@ _From the notebook's outputs; each item links to the decision it feeds._
 - [x] Findings item 1: split into "near-duplicates" (section 2) and "confusable queues" (section 5)
 - [x] Findings item 8: versions (your crosstab answers it)
 - [x] Move `seaborn` from core `dependencies` to `dev-dependencies` in `pyproject.toml`, then `uv sync`
-- [ ] Optional: move `docs/steps/image.png` → `docs/reports/queue-similarity.png` and update the link
+- [x] Optional: move `docs/steps/image.png` → `docs/reports/queue-similarity.png` and update the link
 - [ ] Commit
 
 ## What you learn
