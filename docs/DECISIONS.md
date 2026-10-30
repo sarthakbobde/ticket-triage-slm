@@ -20,8 +20,11 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [005](#adr-005) | Teacher = Gemini; exact model chosen by a 50-ticket pilot | Accepted (model TBD at Step 03) | 2026-10-29 |
 | [006](#adr-006) | All decisions kept in one file | Accepted | 2026-10-29 |
 | [007](#adr-007) | Dataset = Tobi-Bueck/customer-support-tickets, English only | Accepted | 2026-10-29 |
-| [008](#adr-008) | Categories = dataset's top queues; priority mapped 5 → 4 levels | Proposed (finalise after profiling) | 2026-10-29 |
+| [008](#adr-008) | ~~Categories = dataset's top queues; priority mapped 5 → 4 levels~~ | Superseded by ADR-010 | 2026-10-29 |
 | [009](#adr-009) | EDA in notebooks, pipeline in scripts; notebook tools as uv dev deps | Accepted | 2026-10-29 |
+| [010](#adr-010) | 6 merged categories, 3 priorities; truth = teacher + hand-labelled gold set | Accepted | 2026-10-30 |
+| [011](#adr-011) | `entities` replaced by `products: list[str]` | Accepted | 2026-10-30 |
+| [012](#adr-012) | Test set first (natural distribution), capped training sample, 200-ticket gold set | Accepted | 2026-10-30 |
 
 ## Template
 
@@ -304,7 +307,7 @@ Tobi-Bueck, **English only**. We'll sample ~3k tickets for labelling in Step 03.
 
 <a id="adr-008"></a>
 ## ADR-008 — Category list and priority levels (schema v1.0)
-**Status:** Proposed: finalise after reading `docs/reports/dataset-profile.md` · **Date:** 2026-10-29 · **Step:** 02
+**Status:** Superseded by [ADR-010](#adr-010): the EDA showed the dataset's queues are too noisy to adopt as-is · **Date:** 2026-10-29 · **Step:** 02
 
 ### Context
 The draft schema (ADR-001) had e-commerce categories (refund, shipping…), but the dataset's
@@ -366,3 +369,115 @@ into a script or `src/triage/` and record the decision here.
 - ✅ Free exploration without polluting the pipeline.
 - ✅ The TF-IDF + logistic regression baseline gives a **non-LLM benchmark** for `category`/`priority`.
 - ⚠️ Notebooks with outputs make noisy git diffs. Clear outputs before committing, or accept it.
+
+---
+
+<a id="adr-010"></a>
+## ADR-010 — Six categories; truth = teacher guidelines + gold set
+**Status:** Accepted · **Date:** 2026-10-30 · **Step:** 02 · **Supersedes:** ADR-008
+
+### Context
+EDA (`notebooks/02_eda.ipynb`) on 23,618 English tickets:
+- A TF-IDF + logistic regression baseline scores **macro-F1 0.58** on the 10 dataset queues.
+- Queue-profile similarity clusters {IT Support, Technical Support} (0.57) and
+  {Customer Service, Sales, General Inquiry, Returns} (0.36–0.70).
+- Reading samples: near-identical tickets ("security protocols for medical data") appear under
+  Technical, IT, Product **and** Customer Service. Priority is similarly inconsistent (a data
+  breach labelled `low`, a best-practices question labelled `high`); baseline macro-F1 0.63.
+- English data has only low / medium / high priorities.
+
+**Conclusion:** the dataset's labels are only weakly determined by the text. That's label
+noise, and no model can learn it away.
+
+Baseline with merged queues (5-fold CV):
+
+| Option | Classes | Macro-F1 | Acc | Majority share |
+|---|---|---|---|---|
+| A: original | 10 | 0.58 | 0.56 | 0.29 |
+| B: IT+Tech, CS+Sales+General | 7 | 0.63 | 0.63 | 0.41 |
+| **C: B + Returns→CS** | **6** | **0.66** | **0.65** | 0.41 |
+| D: C + Product→Tech | 5 | 0.70 | 0.74 | 0.59 |
+
+### Options
+- Category set: B, C or D. D scores highest but "technical" becomes 59% of tickets, which is
+  useless for routing.
+- Truth source: (1) dataset labels as targets: model learns the noise, ceiling ≈ 0.65;
+  (2) **written definitions + teacher labels + human gold set**.
+
+### Decision
+- **Categories (C):** `technical`, `product`, `billing`, `outage`, `customer_service`, `hr`.
+  The split between technical and product is defined by **"is something broken?"**, a rule a
+  human can apply from the text alone.
+- **Priority:** `low`, `medium`, `high` (no `urgent`; it doesn't exist in the English data).
+- **Truth = labelling guidelines** in `src/triage/prompts.py` (`CATEGORY_DEFINITIONS` +
+  priority rubric), applied by the teacher, and audited by a **hand-labelled gold set** (ADR-012).
+- Dataset labels are mapped via `src/triage/dataset_map.py` and used **only as a cross-check**
+  (teacher–dataset agreement), never as targets.
+
+### Consequences
+- ✅ Labels follow rules a human can check, so scores are meaningful.
+- ✅ Mirrors industry practice: business defines the taxonomy, annotators follow guidelines,
+  gold set keeps them honest.
+- ✅ The 0.66 TF-IDF baseline is the **number to beat** on the merged dataset labels.
+- ⚠️ Teacher–dataset agreement will be modest (~0.6–0.7). That's expected, not a bug.
+- ⚠️ Changing `CATEGORY_DEFINITIONS` changes the truth: new ADR + `SCHEMA_VERSION` bump + relabel.
+
+---
+
+<a id="adr-011"></a>
+## ADR-011 — Replace `entities` with `products`
+**Status:** Accepted · **Date:** 2026-10-30 · **Step:** 02 · **Amends:** ADR-001 (entities row)
+
+### Context
+EDA: only **3.4%** of tickets contain any anonymisation placeholder (`<tel_num>` 288,
+`<acc_num>` 64, `<email>` 3). Order ids, emails and amounts are effectively absent, so those
+fields would be null ~97%+ of the time and the model would learn "always null".
+`<br>` (2,521) is HTML, not an entity. What tickets *do* mention constantly is named
+products/software (Elasticsearch, Jira, MacBook Pro, Zoho Books, Symantec…).
+
+### Options
+1. Keep the 4 fields: mostly null, so useless.
+2. **`products: list[str]` only.**
+3. `products` + an `issue_type` enum: overlaps with category and the dataset's tags; more to label.
+
+### Decision
+Option 2. `products` lists names explicitly in the ticket; `[]` if none; never invented.
+Evaluated with set precision/recall per ticket (Step 05).
+
+### Consequences
+- ✅ A field that is actually populated and useful for routing to product specialists.
+- ⚠️ No ground truth in the dataset; teacher output + gold set only.
+- ⚠️ Text cleaning needed before labelling: `<br>` → newline, literal `
+` escapes → newline (Step 03 script).
+
+---
+
+<a id="adr-012"></a>
+## ADR-012 — Sampling, splits and the gold set
+**Status:** Accepted · **Date:** 2026-10-30 · **Step:** 02 → used in 03/04
+
+### Context
+Mapped category shares: technical 40.9%, customer_service 24.4%, product 18.6%, billing 10.2%,
+outage 4.0%, hr 1.9%. Random sampling would give the small model very few `hr`/`outage` examples.
+The first idea (cap every queue at 340, the size of General Inquiry) would consume *all* of
+General Inquiry, leaving nothing for testing, and makes the test set unrealistically balanced.
+
+### Decision
+Order matters:
+1. **Near-duplicate removal** on normalised text (lowercase, collapse whitespace, strip
+   punctuation) *before* any split, so copies can't straddle train and test.
+2. **Test set first:** 500 tickets, **natural distribution** (stratified on mapped category).
+   It measures real-world performance and is frozen forever.
+3. **Validation:** 300 tickets, natural distribution.
+4. **Train pool:** from the rest, **capped per mapped category** (cap ≈ 600), so rare classes
+   are over-represented relative to reality but not wildly. Target ~2,500 tickets.
+5. **Gold set:** 200 of the 500 test tickets, **hand-labelled by you** with the same guidelines,
+   *before* looking at the teacher's labels (to avoid anchoring).
+
+All splits use `SEED = 42`. Total to label with the teacher: ~3,300 tickets (cost unchanged, ADR-005).
+
+### Consequences
+- ✅ Honest test numbers + enough rare-class training examples.
+- ✅ Gold set lets us measure the teacher itself, i.e. the ceiling for the student.
+- ⚠️ `hr` in a 200-ticket gold set is only ~4 tickets; report per-class results with counts.
+- ⚠️ Stratifying on noisy dataset labels is approximate, but good enough for sampling.
