@@ -14,13 +14,13 @@ See docs/steps/03-teacher-labels.md.
 """
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
 import pandas as pd
 
 from triage.dataset_map import QUEUE_TO_CATEGORY
+from triage.textclean import clean_text, normalise
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -34,20 +34,6 @@ ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw" / "tickets_en.jsonl"
 OUT_DIR = ROOT / "data" / "processed"
 OUT_REPORT = ROOT / "docs" / "reports" / "splits.md"
-
-
-def clean_text(text: str) -> str:
-    """What the teacher AND the student will see, so it must be identical everywhere (ADR-011)."""
-    text = text.replace("\\n", "\n").replace("\\t", " ")  # literal escape sequences in the data
-    text = re.sub(r"<br\s*/?>", "\n", text)  # HTML line breaks
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    return text.strip()
-
-
-def normalise(text: str) -> str:
-    """Key for near-duplicate detection: case, punctuation and spacing don't make a new ticket."""
-    return " ".join(re.sub(r"[^\w\s]", " ", text.lower()).split())
 
 
 def stratified_sample(df: pd.DataFrame, n: int, by: str) -> pd.DataFrame:

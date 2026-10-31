@@ -90,7 +90,7 @@ def read_ids(path: Path) -> set[str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--split", choices=["val", "train", "test"])
+    ap.add_argument("--split", choices=["val", "train", "train_extra", "train_extra2", "test"])
     ap.add_argument("--model", help="override teacher.model in configs/models.yaml (pilot)")
     ap.add_argument("--limit", type=int, help="only the first N tickets of the split (pilot)")
     ap.add_argument("--list-models", action="store_true", help="print model ids the key can use")
