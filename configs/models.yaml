@@ -6,7 +6,7 @@ teacher:                # ADR-005 (amended): Azure AI Foundry, OpenAI-compatible
   model: gpt-4.1        # Foundry deployment name; the only chat deployment found (Step 03 probe)
   api_key_env: TEACHER_API_KEY
   temperature: 0
-  reasoning_effort: null  # gpt-4.1 is not a reasoning model; set "low" only for o-series / gpt-5
+  reasoning_effort: null  # gpt-4.1 is not a reasoning what model; set "low" only for o-series / gpt-5
   response_format: json_schema   # or json_object if the API rejects our schema
   rpm: 60               # requests/minute; raise/lower to match the deployment's quota in Foundry
   # Models to compare in the pilot. The name must be a Foundry DEPLOYMENT name.
@@ -19,6 +19,16 @@ student_local:          # llama.cpp `llama-server` or Ollama, Step 10
   model: ticket-triage-q4
   api_key_env: null
 
-base_candidates:        # verify exact repo names on Hugging Face in Step 06
-  - TBD-1.5B-instruct
-  - TBD-3B-instruct
+# Step 06: untrained base models, served by Ollama (models stored on E:\Ollama\models).
+# Run with:  uv run python evals/run_model.py --config base_qwen --run base-qwen --format none
+base_qwen:
+  base_url: http://localhost:11434/v1
+  model: qwen2.5:3b-instruct
+  api_key_env: null
+  rpm: null
+
+base_llama:
+  base_url: http://localhost:11434/v1
+  model: llama3.2:3b
+  api_key_env: null
+  rpm: null

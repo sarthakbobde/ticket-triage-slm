@@ -26,6 +26,7 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [011](#adr-011) | `entities` replaced by `products: list[str]` | Accepted | 2026-10-30 |
 | [012](#adr-012) | Test set first (natural distribution), capped training sample, 200-ticket gold set | Accepted | 2026-10-30 |
 | [013](#adr-013) | Merge `hr` into `customer_service` (5 categories, schema v1.1); mine extra rare-class tickets | Accepted | 2026-10-31 |
+| [014](#adr-014) | Base model = Qwen2.5-3B-Instruct, chosen from an untrained baseline vs Llama 3.2 3B | Accepted | 2026-10-31 |
 
 ## Template
 
@@ -554,3 +555,52 @@ Option 3. Schema **v1.1** has five categories: `technical`, `product`, `billing`
 - ⚠️ `customer_service` is now a mixed bucket. If HR routing ever matters, it needs its own
   data first.
 - ⚠️ Any later change to the definitions needs a new ADR and a version bump again.
+
+---
+
+<a id="adr-014"></a>
+## ADR-014 — Base model: Qwen2.5-3B-Instruct
+**Status:** Accepted · **Date:** 2026-10-31 · **Step:** 06 · **Completes:** ADR-002 (family chosen with data)
+
+### Context
+ADR-002 fixed the size (1.5B–3B) and said to baseline two untrained candidates. Both were run
+through the Step 05 harness on the 200 gold tickets, served by Ollama (4-bit, GTX 1650),
+once with a plain prompt and once with schema-enforced JSON. Gold labels were drafted by Claude
+and accepted by the user, so scores measure agreement with those labels. Reports: `evals/reports/`.
+
+| | Qwen plain | Llama plain | Qwen schema | Llama schema |
+|---|---|---|---|---|
+| Valid JSON | 100% | 2% | 100% | 100% |
+| Category accuracy / macro-F1 | 75.5 / 62.5 | 2.0 / 2.0 | 75.5 / 62.5 | 71.0 / 68.0 |
+| Priority accuracy | 40.5 | 1.5 | 40.5 | 76.0 |
+| Sentiment accuracy | 63.0 | 1.0 | 63.0 | 59.0 |
+| Products F1 | 36.3 | 2.0 | 65.0 | 64.2 |
+| Model size in Ollama | 1.9 GB, fully on GPU | 2.9 GB, 20% spills to CPU | | |
+
+Notes: Llama's plain-prompt answers lose the closing `}` (170 of 200 become valid if it is
+added) or arrive in code fences (30 of 200); the harness stays strict. Latencies are rough: the
+last 90 Llama schema tickets ran after a server restart with part of the model on the CPU.
+Both models are weak on `customer_service` and `outage` untrained.
+
+### Options
+1. Llama 3.2 3B: better priority and macro-F1 untrained, but bigger, spills out of 4 GB VRAM
+   at 4k context, and needs schema enforcement just to be valid.
+2. **Qwen2.5-3B-Instruct:** smaller, fits the GPU, valid JSON without help.
+3. Qwen2.5-1.5B (Apache-2.0 per our recollection; not baselined): smaller still, a fallback.
+
+### Decision
+Fine-tune **Qwen2.5-3B-Instruct** (Ollama tag `qwen2.5:3b-instruct`, Hugging Face
+`Qwen/Qwen2.5-3B-Instruct`). Untrained gaps matter less than fit: its weak fields (priority,
+`customer_service`) are what the training data teaches, and it must serve fully on the GPU in Step 10.
+
+### Consequences
+- ✅ Fits the 4 GB card with room for context; valid JSON out of the box.
+- ✅ **Numbers to beat** (Qwen schema-enforced): category accuracy 75.5%, macro-F1 62.5%,
+  priority 40.5%, sentiment 63.0%, products F1 65.0%.
+- ⚠️ **Licence:** Hugging Face lists the 3B model as `qwen-research`, not Apache-2.0. The
+  terms were not read (the page does not spell out restrictions); read the LICENSE file in the
+  repo. Fine for a learning/portfolio project; if this ever became commercial, switch to
+  Qwen2.5-1.5B (check its licence) or revisit this ADR.
+- ⚠️ Priority baselines differ a lot between models (40% vs 76%), so a fine-tune that only reaches
+  Llama's untrained 76% would not be a win. Compare per field, not only on category.
+- ⚠️ The gold set is small and its labels came from Claude: a few points either way is noise.

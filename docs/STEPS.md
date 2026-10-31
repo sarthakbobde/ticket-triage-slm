@@ -15,7 +15,7 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 
 ## Phase 2 — Baseline & evals (before any training!)
 - [x] 🤝 **05 Eval harness** — metrics: JSON validity, per-field accuracy, macro-F1, latency. → [05-eval-harness.md](steps/05-eval-harness.md)
-- [ ] 🧑 **06 Baseline** — run the *untrained* small model + the teacher through the harness.
+- [x] 🧑 **06 Baseline** — run two *untrained* small models through the harness; Qwen2.5-3B chosen (ADR-014). *Teacher row deferred.* → [06-baseline.md](steps/06-baseline.md)
 
 ## Phase 3 — Fine-tuning
 - [ ] 🤝 **07 QLoRA on Kaggle** — train, track loss, save the adapter.

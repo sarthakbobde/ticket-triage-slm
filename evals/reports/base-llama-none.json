@@ -1,0 +1,16 @@
+{
+  "run": "base-llama-none",
+  "tickets": 200,
+  "json_valid": 0.020000000000000018,
+  "schema_valid": 0.02,
+  "category_accuracy": 0.02,
+  "category_macro_f1": 0.01985347985347985,
+  "priority_accuracy": 0.015,
+  "priority_off_by_one": 0.005,
+  "sentiment_accuracy": 0.01,
+  "products_f1": 0.02,
+  "reply_promise_rate": 0.0,
+  "latency_p50_s": 2.961,
+  "latency_p95_s": 3.879,
+  "avg_output_tokens": 107.835
+}

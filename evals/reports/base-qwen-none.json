@@ -1,0 +1,16 @@
+{
+  "run": "base-qwen-none",
+  "tickets": 200,
+  "json_valid": 1.0,
+  "schema_valid": 1.0,
+  "category_accuracy": 0.755,
+  "category_macro_f1": 0.6253056884635833,
+  "priority_accuracy": 0.405,
+  "priority_off_by_one": 0.57,
+  "sentiment_accuracy": 0.63,
+  "products_f1": 0.3626190476190476,
+  "reply_promise_rate": 0.005,
+  "latency_p50_s": 2.264,
+  "latency_p95_s": 2.96,
+  "avg_output_tokens": 100.25
+}

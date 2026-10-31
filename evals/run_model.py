@@ -86,7 +86,9 @@ def read_done_ids(path):
     if path.exists():
         with open(path, encoding="utf-8") as file:
             for line in file:
-                done.add(json.loads(line)["id"])
+                row = json.loads(line)
+                if not row.get("error"):  # a failed call must be retried on the next run
+                    done.add(row["id"])
     return done
 
 

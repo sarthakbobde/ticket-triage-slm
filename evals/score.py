@@ -78,7 +78,11 @@ def main():
     parser.add_argument("--run", required=True)
     args = parser.parse_args()
 
-    run_rows = read_jsonl(RUNS_DIR / f"{args.run}.jsonl")
+    # A retried ticket appears twice in the file (failed call, then the retry): keep the last.
+    latest = {}
+    for row in read_jsonl(RUNS_DIR / f"{args.run}.jsonl"):
+        latest[row["id"]] = row
+    run_rows = list(latest.values())
     gold = {}
     for row in read_jsonl(GOLD_FILE):
         gold[row["id"]] = row
