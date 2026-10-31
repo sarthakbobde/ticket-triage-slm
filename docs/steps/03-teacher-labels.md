@@ -15,7 +15,7 @@ A large model (the **teacher**) labels ~3,300 tickets with our full JSON schema.
 ```
 tickets ─► 02_build_splits ─► test / val / train (unlabelled)
                                        │
-           pilot: 50 val tickets × 2 candidates ─► 03_pilot_report ─► you pick a model
+           pilot: 50 val tickets × 3 candidates ─► 03_pilot_report ─► you pick a model
                                        │
                     03_label_with_teacher (val + train) ─► data/labeled/*.jsonl
 ```
@@ -44,13 +44,14 @@ to report a score? (Hint: look at `hr` in the gold column, ADR-012 warned about 
    ```bash
    uv run python scripts/03_label_with_teacher.py --list-models
    ```
-3. In `configs/models.yaml` → `teacher.candidates`, fix the two ids if they differ, and fill
+3. In `configs/models.yaml` → `teacher.candidates`, fix the three ids if they differ, and fill
    in their prices (USD per 1M tokens, ai.google.dev/pricing). Also set `rpm` to your tier's limit.
 
-## 3. Pilot: same 50 tickets, two candidates (≈ $0.10)
+## 3. Pilot: same 50 tickets, three candidates (≈ $0.12)
 ```bash
 uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-3.8-flash
 uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-3.5-flash-lite
+uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-2.5-flash-lite
 uv run python scripts/03_pilot_report.py
 ```
 If a call fails with an error about `response_format` or the schema, set

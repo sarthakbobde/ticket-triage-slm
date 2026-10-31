@@ -7,6 +7,7 @@ Agreement with the dataset's (noisy) labels is only a sanity check: ~0.6-0.7 is 
 (ADR-010). The 20 side-by-side tickets at the end are what you actually judge on.
 """
 
+import itertools
 import json
 import statistics
 import sys
@@ -75,16 +76,13 @@ def main() -> None:
             f"| {cost_s} |"
         )
 
-    names = list(runs)
-    if len(names) == 2:
-        a, b = (runs[n] for n in names)
-        agree_cat = sum(a[i]["label"]["category"] == b[i]["label"]["category"] for i in common)
-        agree_pri = sum(a[i]["label"]["priority"] == b[i]["label"]["priority"] for i in common)
-        lines += [
-            "",
-            f"Candidates agree with each other on category for **{agree_cat}/{len(common)}** and "
-            f"priority for **{agree_pri}/{len(common)}** tickets.",
-        ]
+    if len(runs) > 1:
+        lines += ["", "Agreement between candidates (same label on the same ticket):", ""]
+        lines += ["| pair | category | priority |", "|---|---|---|"]
+        for (ma, a), (mb, b) in itertools.combinations(runs.items(), 2):
+            agree_cat = sum(a[i]["label"]["category"] == b[i]["label"]["category"] for i in common)
+            agree_pri = sum(a[i]["label"]["priority"] == b[i]["label"]["priority"] for i in common)
+            lines.append(f"| {ma} vs {mb} | {agree_cat}/{len(common)} | {agree_pri}/{len(common)} |")
 
     # Disagreements first: that's where the stronger model earns (or doesn't earn) its price.
     def disagreement(i: str) -> int:

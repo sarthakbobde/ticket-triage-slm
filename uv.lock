@@ -2767,7 +2767,6 @@ dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
-    { name = "seaborn" },
     { name = "tqdm" },
 ]
 
@@ -2782,6 +2781,7 @@ dev = [
     { name = "ipykernel" },
     { name = "matplotlib" },
     { name = "scikit-learn" },
+    { name = "seaborn" },
 ]
 
 [[distribution]]

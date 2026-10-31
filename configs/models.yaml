@@ -14,6 +14,7 @@ teacher:                # ADR-005: Gemini via its OpenAI-compatible endpoint
   candidates:
     gemini-3.8-flash:      {input: 0.0, output: 0.0}
     gemini-3.5-flash-lite: {input: 0.0, output: 0.0}
+    gemini-2.5-flash-lite: {input: 0.0, output: 0.0}   # cheapest paid option (~$0.50 for the full set)
 
 student_local:          # llama.cpp `llama-server` or Ollama, Step 10
   base_url: http://localhost:8080/v1
