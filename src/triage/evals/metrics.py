@@ -37,7 +37,7 @@ def parse_answer(raw_text):
 def accuracy(true_values, predicted_values):
     """Share of tickets where the prediction equals the truth. None (invalid answer) is wrong."""
     right = 0
-    for true_value, predicted_value in zip(true_values, predicted_values):
+    for true_value, predicted_value in zip(true_values, predicted_values, strict=True):
         if true_value == predicted_value:
             right = right + 1
     return right / len(true_values)
@@ -52,10 +52,10 @@ def class_scores(true_values, predicted_values, classes):
     """
     scores = {}
     for name in classes:
-        true_positive = 0   # model said name, truth is name
+        true_positive = 0  # model said name, truth is name
         false_positive = 0  # model said name, truth is something else
         false_negative = 0  # truth is name, model said something else (or gave no answer)
-        for true_value, predicted_value in zip(true_values, predicted_values):
+        for true_value, predicted_value in zip(true_values, predicted_values, strict=True):
             if predicted_value == name and true_value == name:
                 true_positive = true_positive + 1
             elif predicted_value == name and true_value != name:
@@ -97,7 +97,7 @@ def macro_f1(scores):
 def confusion(true_values, predicted_values):
     """Counts of (truth, prediction) pairs, e.g. {("billing", "customer_service"): 3}."""
     counts = {}
-    for true_value, predicted_value in zip(true_values, predicted_values):
+    for true_value, predicted_value in zip(true_values, predicted_values, strict=True):
         pair = (true_value, predicted_value)
         counts[pair] = counts.get(pair, 0) + 1
     return counts
@@ -112,7 +112,7 @@ def priority_off_by_one(true_values, predicted_values):
     Off by one is a mild mistake; low vs high is a bad one. Accuracy alone hides that.
     """
     close = 0
-    for true_value, predicted_value in zip(true_values, predicted_values):
+    for true_value, predicted_value in zip(true_values, predicted_values, strict=True):
         if predicted_value is None:
             continue
         gap = abs(PRIORITY_RANK[true_value] - PRIORITY_RANK[predicted_value])

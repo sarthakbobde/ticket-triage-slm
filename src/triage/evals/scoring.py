@@ -1,44 +1,32 @@
-"""Step 05b: score a run against the gold labels. Free: no model is called.
+"""Score a run against the gold labels (Step 05b). Free: no model is called.
 
-  uv run python evals/score.py --run teacher-gpt-4.1
+Reads  evals/runs/<run>.jsonl          raw answers from triage.evals.runner (or the Kaggle notebook)
+       data/gold/gold_labels.jsonl     the 200 reviewed labels
+Writes evals/reports/<run>.md and .json (the numbers, for comparing runs)
 
-Reads  evals/runs/<run>.jsonl            (raw answers from evals/run_model.py)
-       data/gold/gold_labels.jsonl       (the 200 reviewed labels)
-Writes evals/reports/<run>.md and evals/reports/<run>.json (the numbers, for comparing runs)
-
-An invalid answer counts as WRONG for every field (see src/triage/metrics.py).
+An invalid answer counts as WRONG for every field (see metrics.py).
 """
 
-import argparse
 import json
-import sys
+import logging
 from pathlib import Path
+from typing import Any
 
-from triage import metrics
+from triage import paths
+from triage.evals import metrics
+from triage.io import Row, read_jsonl
 from triage.schema import Category, Priority, Sentiment
 
-sys.stdout.reconfigure(encoding="utf-8")
-
-ROOT = Path(__file__).resolve().parents[1]
-GOLD_FILE = ROOT / "data" / "gold" / "gold_labels.jsonl"
-RUNS_DIR = ROOT / "evals" / "runs"
-REPORTS_DIR = ROOT / "evals" / "reports"
+log = logging.getLogger(__name__)
 
 
-def read_jsonl(path):
-    rows = []
-    with open(path, encoding="utf-8") as file:
-        for line in file:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
-
-
-def percent(number):
+def percent(number: float) -> str:
     return f"{100 * number:.1f}%"
 
 
-def field_report(classes, true_values, predicted_values):
+def field_report(
+    classes: list[str], true_values: list[str], predicted_values: list[str | None]
+) -> dict[str, Any]:
     """Numbers for one classification field (category, priority or sentiment)."""
     scores = metrics.class_scores(true_values, predicted_values, classes)
     return {
@@ -49,7 +37,7 @@ def field_report(classes, true_values, predicted_values):
     }
 
 
-def class_table(report, classes):
+def class_table(report: dict[str, Any], classes: list[str]) -> list[str]:
     lines = ["| class | precision | recall | F1 | gold tickets |", "|---|---|---|---|---|"]
     for name in classes:
         s = report["classes"][name]
@@ -60,9 +48,9 @@ def class_table(report, classes):
     return lines
 
 
-def confusion_table(report, classes):
+def confusion_table(report: dict[str, Any], classes: list[str]) -> list[str]:
     """Rows = what the gold says, columns = what the model said ('invalid' = no usable answer)."""
-    columns = list(classes) + ["invalid"]
+    columns = [*classes, "invalid"]
     lines = ["| gold \\ model | " + " | ".join(columns) + " |", "|---" * (len(columns) + 1) + "|"]
     for true_name in classes:
         cells = []
@@ -73,19 +61,23 @@ def confusion_table(report, classes):
     return lines
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--run", required=True)
-    args = parser.parse_args()
-
-    # A retried ticket appears twice in the file (failed call, then the retry): keep the last.
-    latest = {}
-    for row in read_jsonl(RUNS_DIR / f"{args.run}.jsonl"):
+def latest_row_per_ticket(rows: list[Row]) -> list[Row]:
+    """A retried ticket appears twice in a run file (failed call, then the retry): keep the last."""
+    latest: dict[str, Row] = {}
+    for row in rows:
         latest[row["id"]] = row
-    run_rows = list(latest.values())
-    gold = {}
-    for row in read_jsonl(GOLD_FILE):
-        gold[row["id"]] = row
+    return list(latest.values())
+
+
+def score_run(
+    run_name: str,
+    runs_dir: Path = paths.EVAL_RUNS,
+    reports_dir: Path = paths.EVAL_REPORTS,
+    gold_file: Path = paths.GOLD_LABELS,
+) -> tuple[dict[str, Any], list[str]]:
+    """Score one run. Writes the report files and returns (summary numbers, report lines)."""
+    run_rows = latest_row_per_ticket(read_jsonl(runs_dir / f"{run_name}.jsonl"))
+    gold = {row["id"]: row for row in read_jsonl(gold_file)}
 
     # Line up each answer with its gold label.
     true_category, true_priority, true_sentiment = [], [], []
@@ -131,8 +123,8 @@ def main():
     priority = field_report(priority_classes, true_priority, pred_priority)
     sentiment = field_report(sentiment_classes, true_sentiment, pred_sentiment)
 
-    summary = {
-        "run": args.run,
+    summary: dict[str, Any] = {
+        "run": run_name,
         "tickets": count,
         "json_valid": 1 - problems["not_json"] / count,
         "schema_valid": problems[""] / count,
@@ -148,7 +140,7 @@ def main():
         "avg_output_tokens": (sum(output_tokens) / len(output_tokens)) if output_tokens else None,
     }
 
-    lines = [f"# Eval: {args.run}", "", f"{count} gold tickets. Invalid answers count as wrong.", ""]
+    lines = [f"# Eval: {run_name}", "", f"{count} gold tickets. Invalid answers count as wrong.", ""]
     lines += [
         "## Headline",
         "",
@@ -164,12 +156,17 @@ def main():
         f"| products F1 (per ticket, averaged) | {percent(summary['products_f1'])} |",
     ]
     if summary["reply_promise_rate"] is not None:
-        lines.append(f"| replies that promise refunds or timelines | {percent(summary['reply_promise_rate'])} |")
+        lines.append(
+            f"| replies that promise refunds or timelines | {percent(summary['reply_promise_rate'])} |"
+        )
     if summary["latency_p50_s"] is not None:
-        lines.append(f"| latency p50 / p95 | {summary['latency_p50_s']:.2f}s / {summary['latency_p95_s']:.2f}s |")
+        lines.append(
+            f"| latency p50 / p95 | {summary['latency_p50_s']:.2f}s / {summary['latency_p95_s']:.2f}s |"
+        )
     lines += [
         "",
-        f"Invalid answers: {problems['not_json']} not JSON, {problems['schema']} JSON that breaks the schema.",
+        f"Invalid answers: {problems['not_json']} not JSON, "
+        f"{problems['schema']} JSON that breaks the schema.",
         "",
         "## Category per class",
         "",
@@ -183,15 +180,12 @@ def main():
     lines += class_table(sentiment, sentiment_classes)
     lines += [
         "",
-        "Small classes are noisy: with 8 gold billing tickets, one mistake moves billing recall by 12 points.",
+        "Small classes are noisy: with 8 gold billing tickets, "
+        "one mistake moves billing recall by 12 points.",
     ]
 
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    (REPORTS_DIR / f"{args.run}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    (REPORTS_DIR / f"{args.run}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    print("\n".join(lines))
-    print(f"\nSaved -> evals/reports/{args.run}.md")
-
-
-if __name__ == "__main__":
-    main()
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    (reports_dir / f"{run_name}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (reports_dir / f"{run_name}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    log.info("Saved -> %s", reports_dir / f"{run_name}.md")
+    return summary, lines

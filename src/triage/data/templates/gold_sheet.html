@@ -1,37 +1,4 @@
-"""Step 04a: build the hand-labelling sheet for the 200 gold tickets.
-
-Output: data/gold/label_gold.html  (one file, open it in your browser; no server needed)
-
-The sheet shows ONLY the ticket text. It never shows the dataset's labels or the teacher's labels,
-so nothing can anchor you. You choose category, priority, sentiment, and type any product names.
-Your answers are saved in the browser as you click, and "Export" downloads them as a file.
-
-Run:  uv run python scripts/04_make_gold_sheet.py
-"""
-
-import json
-import random
-import sys
-from pathlib import Path
-
-from triage.prompts import CATEGORY_DEFINITIONS
-from triage.schema import Category, Sentiment
-
-sys.stdout.reconfigure(encoding="utf-8")
-
-SEED = 42
-ROOT = Path(__file__).resolve().parents[1]
-TEST_FILE = ROOT / "data" / "processed" / "test.jsonl"
-OUT_FILE = ROOT / "data" / "gold" / "label_gold.html"
-
-# Same rubric as SYSTEM_PROMPT in src/triage/prompts.py (keep the two in sync).
-PRIORITY_RULES = {
-    "high": "customer blocked, no workaround",
-    "medium": "problem with a workaround, or time-sensitive question",
-    "low": "general question, feedback, feature request",
-}
-
-PAGE = r"""<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -252,48 +219,3 @@ render();
 </script>
 </body>
 </html>
-"""
-
-
-def main():
-    # 1. The gold tickets, text only. No dataset labels, no teacher labels.
-    gold = []
-    with open(TEST_FILE, encoding="utf-8") as file:
-        for line in file:
-            row = json.loads(line)
-            if row["gold"]:
-                gold.append({"id": row["id"], "text": row["text"]})
-
-    # 2. Mix the order (the file order may follow the dataset's queues, which could hint at labels).
-    random.seed(SEED)
-    random.shuffle(gold)
-
-    # 3. Fill the page template.
-    categories = []
-    category_rules = []
-    for category in Category:
-        categories.append(category.value)
-        category_rules.append([category.value, CATEGORY_DEFINITIONS[category]])
-    priorities = ["low", "medium", "high"]
-    priority_rules = []
-    for name in ["high", "medium", "low"]:
-        priority_rules.append([name, PRIORITY_RULES[name]])
-    sentiments = []
-    for sentiment in Sentiment:
-        sentiments.append(sentiment.value)
-
-    page = PAGE
-    page = page.replace("__TICKETS__", json.dumps(gold, ensure_ascii=False).replace("</", "<\\/"))
-    page = page.replace("__CATEGORIES__", json.dumps(categories))
-    page = page.replace("__PRIORITIES__", json.dumps(priorities))
-    page = page.replace("__SENTIMENTS__", json.dumps(sentiments))
-    page = page.replace("__CAT_RULES__", json.dumps(category_rules))
-    page = page.replace("__PRI_RULES__", json.dumps(priority_rules))
-
-    OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUT_FILE.write_text(page, encoding="utf-8")
-    print(f"{len(gold)} gold tickets -> {OUT_FILE.relative_to(ROOT)}")
-
-
-if __name__ == "__main__":
-    main()

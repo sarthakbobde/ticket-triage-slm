@@ -16,6 +16,9 @@ dependencies = [
 
 [project.optional-dependencies]
 serve = ["fastapi>=0.111", "uvicorn>=0.30"]
+
+[project.scripts]
+triage = "triage.cli:main"
 # Training deps (torch, transformers, peft, trl, bitsandbytes) are installed on Kaggle only.
 # See docs/DECISIONS.md#adr-004
 
@@ -34,4 +37,19 @@ dev-dependencies = [
     "scikit-learn>=1.5",
     "seaborn>=0.13",
     "pytest",
+    "ruff",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import order, B likely bugs, UP modern syntax
+select = ["E", "W", "F", "I", "B", "UP"]
+# schema.py is the data contract; keep its str+Enum classes as they are (UP042).
+ignore = ["UP042"]
