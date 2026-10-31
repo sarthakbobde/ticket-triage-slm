@@ -1,0 +1,200 @@
+{"id": "207d6c4d0213", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Adobe Illustrator CC 2021", "Shopware"]}
+{"id": "75a4dcf2b47d", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["ClickUp", "PDFfiller", "IntelliJ IDEA", "Norton Antivirus"]}
+{"id": "31c02cf8f3c3", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "3bbc1372321d", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Google Cloud Platform"]}
+{"id": "c583b06fef21", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "923e750fbc35", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Google Cloud Platform"]}
+{"id": "5c33e8fec9f9", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["SAP ERP", "Salesforce CRM"]}
+{"id": "aa60d912b56a", "category": "outage", "priority": "high", "sentiment": "negative", "products": ["MongoDB 4.4"]}
+{"id": "e4519ae80ccf", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "02f107b9065a", "category": "outage", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "9c13dc2c2960", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "7c5d5cad982e", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "dce21b42e9d9", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "63716ab9e738", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Ubiquiti UniFi Dream Machine", "SAP ERP Central Component 6.0"]}
+{"id": "443d2d7ccc2c", "category": "technical", "priority": "low", "sentiment": "negative", "products": []}
+{"id": "0ec81dab59d0", "category": "billing", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "e4173077b7df", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["Ubuntu"]}
+{"id": "ff7304e1c216", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "ecf84abeb105", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["TYPO3", "AWS"]}
+{"id": "8328c0cee36e", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "1427287a60ec", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "6fe2944455f1", "category": "customer_service", "priority": "low", "sentiment": "positive", "products": []}
+{"id": "08248febd6b5", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "f8a574244696", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "07dff9c7b906", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "483f53c25c3f", "category": "billing", "priority": "medium", "sentiment": "negative", "products": ["Puppet", "Firebase"]}
+{"id": "1550a1704680", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "f52cb987c37d", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "7607aaeab401", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "e3baad0992b3", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "045d7398facb", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "4c31fceeffa5", "category": "technical", "priority": "medium", "sentiment": "neutral", "products": ["Cassandra 4.0"]}
+{"id": "b31118e0bc2c", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "b11c029ebe00", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "89f76b2c1d15", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "cf54443d1d92", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["WooCommerce"]}
+{"id": "d8c370292256", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "94e9a862dfcc", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "1a4a1e549596", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Smartsheet"]}
+{"id": "1288cb78266d", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "c1af92daeb08", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "aad6a13edf01", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Lynda.com"]}
+{"id": "f86e5fd0eb01", "category": "customer_service", "priority": "low", "sentiment": "positive", "products": []}
+{"id": "76116b25cd5b", "category": "billing", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "ba9167643528", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "97fd0498c8d8", "category": "outage", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "341cdf55e1e7", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Skype"]}
+{"id": "31bdf6c9564f", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "f827d83512e3", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "62136d109829", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Salesforce CRM"]}
+{"id": "7f2cdd8cba96", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "52fac5e45386", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Red Enterprise Linux"]}
+{"id": "c4df5e7176d4", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "3d9c0f847728", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["Sophos Home", "MySQL 8.0"]}
+{"id": "d1772a963545", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Red Enterprise Linux", "MongoDB 4.4"]}
+{"id": "91a78b385001", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "1579d6b47b03", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "3aafe7e70f19", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "26e02b60e2c5", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["MATLAB", "Shopify"]}
+{"id": "cb4bb83aeee5", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["Kubernetes", "NAS", "Norton 360"]}
+{"id": "dffc3927239f", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "c7d6acbc7e46", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["ClickUp", "DataRobot"]}
+{"id": "96e46f531285", "category": "outage", "priority": "medium", "sentiment": "negative", "products": ["Signal Squarespace"]}
+{"id": "b7e29d144cc2", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["macOS Monterey"]}
+{"id": "0744fd2fea50", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": ["Elasticsearch"]}
+{"id": "80c54ee36318", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "846a4182e963", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "c86cc1fd57e2", "category": "outage", "priority": "high", "sentiment": "negative", "products": ["Zoom", "PHP 8.0"]}
+{"id": "8aa71ea88ed2", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["Aruba switch"]}
+{"id": "2b95bb8e7c86", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "b28961b1e12f", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Avid Pro Tools 2021.6", "MacBook Pro", "Apache Hadoop 3.2.1"]}
+{"id": "128d1631452f", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "4d95d8ef775c", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "3205ac0b6d73", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "777cf58bed92", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "d87c75840e81", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["KNIME"]}
+{"id": "c79d5dab4dea", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Mesh-Netzwerk"]}
+{"id": "ec066134abc5", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "d0efb6019920", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Microsoft Teams"]}
+{"id": "e8fa2fe00a92", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "d792579cd0ca", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "8658e98d9c23", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Smartsheet", "JIRA"]}
+{"id": "7cd8c5ee973d", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["PrestaShop", "QuickBooks"]}
+{"id": "bb0b5c840ebf", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Alteryx", "macOS", "Windows 10 Pro"]}
+{"id": "92e820cef867", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "af88fb26300c", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "4e0d20670be7", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Drupal Commerce"]}
+{"id": "18d0f136902e", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "6721762bff34", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "820ce059ef97", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "9510789418de", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "7fc9c69ca85f", "category": "outage", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "f65020d7606d", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Squarespace", "MySQL 8.0"]}
+{"id": "704ea882c100", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "aee6970503c4", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["IFTTT"]}
+{"id": "628cbcea3d78", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "33881de423a8", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "63cdc285fe4c", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "a999a4c94e53", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "b94dd54b4bfe", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "ba387662abd6", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "45ebc4f1aff9", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "62dbbc95877f", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "ffed5723ee51", "category": "outage", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "5c3f9e514f32", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "10f6349f451e", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["SAP ERP", "Malwarebytes"]}
+{"id": "424f2526f70e", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["JIRA Software", "Salesforce CRM"]}
+{"id": "17d29ea233b7", "category": "technical", "priority": "low", "sentiment": "negative", "products": []}
+{"id": "1f0cfcf5d8ae", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Pro Tools", "Docker"]}
+{"id": "38ea6644e4ec", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "20335cf0fcbb", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "644dc14455e6", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "786ac53563ee", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "4516265af598", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Symantec", "QuickBooks", "Cisco Webex"]}
+{"id": "3a2c7a5b97cc", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "a1e4e8b4b5cd", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["Docker"]}
+{"id": "869e122fb7cf", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["H2O.ai", "Babbel"]}
+{"id": "714b18bb77e6", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": ["Elasticsearch"]}
+{"id": "bf06d1900b58", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["WhatsApp Desktop"]}
+{"id": "9c96966cf028", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Maple", "Figma"]}
+{"id": "9f8ee5652345", "category": "outage", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "14c756e84b00", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "aab9537189a1", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["IBM SPSS Statistics 28"]}
+{"id": "3bfb4a4d17c7", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "5ff9895b1401", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "1f4fadd0b3db", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": ["Smart Home Hub", "Xbox"]}
+{"id": "b67b2e7e2f30", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["QuickBooks", "MySQL"]}
+{"id": "228a55569661", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "070e09f82774", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "d38f484d8884", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "e6946b979819", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Shopware", "Google Cloud Platform", "Microsoft Azure"]}
+{"id": "da60786b8cdc", "category": "billing", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "743bbae30b54", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "898bd701f4be", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Adobe Audition", "Zoom"]}
+{"id": "d7738cbbc25b", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "acbc22cbaf15", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "c5ad48f271cb", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Aruba 2530"]}
+{"id": "4e72694f98db", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "2db282eae919", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Discord"]}
+{"id": "bf17132b9672", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Scikit-learn", "Redis"]}
+{"id": "3d7601da6fce", "category": "billing", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "e0f8af972fe8", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "621ff493a4ea", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "30738ff08689", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "1f917ffdea5f", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "f4ba6d740967", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "5ef9082a369a", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "74cbb2bf8c81", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "78506c843535", "category": "outage", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "b60f2ba6c36c", "category": "outage", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "3e9b178a3482", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "db1c4a929608", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "963831b10040", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": ["Laravel", "Notion"]}
+{"id": "996125e2bb62", "category": "outage", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "22c20137783f", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "1e59c9aa80f8", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "9cc43289d45a", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["HelloSign"]}
+{"id": "38257327dbf3", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "74855142e3f2", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Blackboard Learn", "Kaspersky Internet Security"]}
+{"id": "34a9fd4add1d", "category": "billing", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "a86ab170f2c2", "category": "outage", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "3ec9ca8e9d1f", "category": "outage", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "bce7735b8a7d", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "948066cfc234", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "fcbc4dad6d43", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "8af9c207794c", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "720df0c1febe", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["Ruby on Rails 6.1"]}
+{"id": "ed16fd90918c", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["PostgreSQL"]}
+{"id": "56767e17fae4", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "853c4e844293", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "4ddbeb37c6df", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Smart-Tracker", "Apache Hadoop 3.2.1"]}
+{"id": "becc4abc2338", "category": "product", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "ff8acda9287d", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "0762312d276c", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "12779bd318ce", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Smartsheet", "Google Meet"]}
+{"id": "2e177348377a", "category": "billing", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "9a229fbcc1b0", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "b6296d2976e4", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Codecademy"]}
+{"id": "3afc922c1425", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Monday.com"]}
+{"id": "586c11618cf4", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "b9e75e3a2df2", "category": "customer_service", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "415dec83b13c", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "4997baff98a2", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "398ec2a4c8ca", "category": "technical", "priority": "high", "sentiment": "negative", "products": ["MongoDB"]}
+{"id": "3c2f4e1757c7", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "c622295bd3be", "category": "billing", "priority": "medium", "sentiment": "negative", "products": ["QuickBooks Online", "Oracle Database 19c", "SAP ERP", "Zapier"]}
+{"id": "93d0485e315d", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "dce6882f1c1f", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "fb35fee5b481", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Scikit-learn", "SAP ERP"]}
+{"id": "99c047c7d9ab", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "6ec2694cd53b", "category": "product", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "08eebc9fa831", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": ["Python 3.9", "Microsoft Office 365"]}
+{"id": "e87244e7528d", "category": "technical", "priority": "high", "sentiment": "negative", "products": []}
+{"id": "c392ef25dcef", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}
+{"id": "578011cc06f4", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "044d08ae8f88", "category": "product", "priority": "low", "sentiment": "neutral", "products": ["Cisco Webex Meetings"]}
+{"id": "6816540a7f6a", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": ["Zapier"]}
+{"id": "845ca4ef69d9", "category": "customer_service", "priority": "low", "sentiment": "neutral", "products": []}
+{"id": "3077b0001c5e", "category": "technical", "priority": "medium", "sentiment": "negative", "products": ["Canvas", "Microsoft Dynamics 365"]}
+{"id": "3befc180d150", "category": "technical", "priority": "medium", "sentiment": "negative", "products": []}

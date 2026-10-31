@@ -33,4 +33,5 @@ dev-dependencies = [
     "matplotlib>=3.8",
     "scikit-learn>=1.5",
     "seaborn>=0.13",
+    "pytest",
 ]

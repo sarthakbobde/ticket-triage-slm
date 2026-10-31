@@ -11,3 +11,7 @@ data/processed/*
 *.gguf
 *.safetensors
 evals/results/
+evals/runs/
+# gold: only the reviewed labels are tracked, not the draft files or the generated sheet
+data/gold/*
+!data/gold/gold_labels.jsonl
