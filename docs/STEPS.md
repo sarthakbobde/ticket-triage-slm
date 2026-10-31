@@ -18,7 +18,7 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 - [x] 🧑 **06 Baseline** — run two *untrained* small models through the harness; Qwen2.5-3B chosen (ADR-014). *Teacher row deferred.* → [06-baseline.md](steps/06-baseline.md)
 
 ## Phase 3 — Fine-tuning
-- [ ] 🤝 **07 QLoRA on Kaggle** — train, track loss, save the adapter.
+- [ ] 🤝 **07 QLoRA on Kaggle** — train, track loss, save the adapter. *Data script and notebook written; waiting for the Kaggle run.* → [07-qlora-kaggle.md](steps/07-qlora-kaggle.md)
 - [ ] 🧑 **08 Evaluate the fine-tune** — compare against baseline. Iterate on data, not just hyperparams.
 
 ## Phase 4 — Inference
