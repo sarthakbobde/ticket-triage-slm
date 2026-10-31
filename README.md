@@ -7,23 +7,43 @@ on a laptop GPU.
 > The pitch this project is built to earn:
 > *"My 3B model matches the big model on X% of tickets at 1/Nth the cost and lower latency."*
 
-## How this repo is organised for learning
+## Quick start
 
-| Folder | What lives there |
+```bash
+uv sync --extra serve        # install the package and its tools
+uv run triage --help         # every pipeline step is a subcommand
+uv run pytest                # tests (no network, no GPU, no paid API)
+uv run ruff check src tests  # lint
+```
+
+The pipeline, in order (details and reasoning in [docs/steps/](docs/steps/)):
+
+| Step | Command |
 |---|---|
-| `docs/steps/` | One file per step: **what** to do, **how**, and **what you learn**. Work through them in order. |
-| `docs/DECISIONS.md` | Decision log (ADRs: Architecture Decision Records): **why** each choice was made and what was rejected. |
-| `src/triage/` | Shared library code: the output schema and prompts (the "contract"). |
-| `scripts/` | Numbered pipeline scripts: download → label → split. |
-| `notebooks/` | Training notebook that runs on Kaggle (free T4 GPUs). |
-| `evals/` | Evaluation harness: compare base vs fine-tuned vs teacher. |
-| `serve/` | FastAPI gateway in front of a local llama.cpp / Ollama server. |
-| `configs/` | YAML configs (training hyperparameters, model names). |
-| `data/` | Datasets — **git-ignored**, never committed. |
+| Download and profile the dataset | `triage data download` |
+| Build test / val / train splits | `triage data splits` |
+| Label with the teacher model (costs money, needs `--yes`) | `triage label --split train --yes` |
+| Find extra rare-class tickets | `triage data mine --round 2` |
+| Merge `hr` into `customer_service` (ADR-013) | `triage data merge-hr` |
+| Build the hand-labelling page for the gold set | `triage data gold-sheet` |
+| Build the Kaggle training files | `triage data training-data` |
+| Collect a model's answers on the gold set | `triage eval run --config base_qwen --run NAME` |
+| Score those answers (free) | `triage eval score --run NAME` |
 
-## Roadmap
+## How the repo is organised
 
-See [docs/STEPS.md](docs/STEPS.md) for the full checklist and [docs/DECISIONS.md](docs/DECISIONS.md) for the reasoning.
+| Path | What lives there |
+|---|---|
+| `src/triage/` | The Python package. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the layout and conventions. |
+| `tests/` | Unit tests. They run on tiny fake data and a fake model client. |
+| `configs/` | `models.yaml`: every model is an OpenAI-compatible endpoint, switched by config, not code. |
+| `notebooks/` | Exploration and the Kaggle training notebook. Notebooks explore; the package is the pipeline. |
+| `evals/` | Output folder only: `runs/` (raw model answers, git-ignored) and `reports/` (scored reports). |
+| `data/` | Datasets and labels. **Git-ignored**, except the reviewed gold labels. |
+| `docs/steps/` | One guide per step: what to do, how, and what you learn. |
+| `docs/DECISIONS.md` | Decision log (ADRs): why each choice was made and what was rejected. |
+| `docs/STEPS.md` | The roadmap and progress. |
+| `serve/` | FastAPI gateway in front of a local llama.cpp / Ollama server (Step 11). |
 
 ## Hardware this was designed for
 

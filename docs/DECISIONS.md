@@ -27,6 +27,7 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [012](#adr-012) | Test set first (natural distribution), capped training sample, 200-ticket gold set | Accepted | 2026-10-30 |
 | [013](#adr-013) | Merge `hr` into `customer_service` (5 categories, schema v1.1); mine extra rare-class tickets | Accepted | 2026-10-31 |
 | [014](#adr-014) | Base model = Qwen2.5-3B-Instruct, chosen from an untrained baseline vs Llama 3.2 3B | Accepted | 2026-10-31 |
+| [015](#adr-015) | Restructure into an installable package with one `triage` CLI, tests, lint and CI | Accepted | 2026-10-31 |
 
 ## Template
 
@@ -604,3 +605,58 @@ Fine-tune **Qwen2.5-3B-Instruct** (Ollama tag `qwen2.5:3b-instruct`, Hugging Fac
 - ⚠️ Priority baselines differ a lot between models (40% vs 76%), so a fine-tune that only reaches
   Llama's untrained 76% would not be a win. Compare per field, not only on category.
 - ⚠️ The gold set is small and its labels came from Claude: a few points either way is noise.
+
+---
+
+<a id="adr-015"></a>
+## ADR-015 — Package layout, one CLI, tests and CI
+**Status:** Accepted · **Date:** 2026-10-31 · **Step:** cross-cutting (after Step 07)
+
+### Context
+The pipeline had grown as nine numbered scripts. They worked, but: the same helpers were
+copied between them (`read_jsonl` five times, the client setup twice), paths and options were
+module-level constants edited by hand (mining's `ROUND`), logic could only be run, not tested,
+and nothing checked style or ran tests automatically. That is fine for exploring and wrong for
+code other people will read, change and trust.
+
+### Options
+1. Keep scripts, add tests around them. Scripts are hard to import and test, and duplication stays.
+2. **Installable package with feature modules, one `triage` command, tests, ruff, CI.**
+3. A workflow orchestrator (Airflow, Prefect, DVC). Overkill for a linear 10-step pipeline run by one person.
+
+### Decision
+Option 2. Layout and rules are in [ARCHITECTURE.md](ARCHITECTURE.md). The command line is
+`argparse` (standard library, already understood) rather than a new dependency. Code stays in
+plain loops and named steps; only the structure changed, and the new commands reproduce the old
+outputs byte for byte (checked on the merged labels, training files, gold sheet and all eval reports).
+
+Old command → new command:
+
+| Was | Is now |
+|---|---|
+| `scripts/01_download_data.py` | `triage data download` |
+| `scripts/02_build_splits.py` | `triage data splits` |
+| `scripts/03_label_with_teacher.py` | `triage label` |
+| `scripts/03_mine_rare_classes.py` (edit `ROUND`) | `triage data mine --round N` |
+| `scripts/03_merge_hr.py` | `triage data merge-hr` |
+| `scripts/03_pilot_report.py` | `triage pilot-report` |
+| `scripts/04_make_gold_sheet.py` | `triage data gold-sheet` |
+| `scripts/07_prepare_training_data.py` | `triage data training-data` |
+| `evals/run_model.py` | `triage eval run` |
+| `evals/score.py` | `triage eval score` |
+
+Behaviour changes made on purpose: `triage label` now also needs `--yes` for remote (paid)
+endpoints, like `triage eval run`; unknown keys in `models.yaml` are errors; metrics use
+`zip(strict=True)` so a length mismatch cannot silently drop tickets; the pilot report no
+longer imports scikit-learn (a dev-only dependency) and macro-F1 there skips classes with no
+true tickets, as the eval harness does.
+
+### Consequences
+- ✅ Logic is importable and tested (41 tests, no network or GPU); lint and tests run in CI.
+- ✅ One definition of paths, config loading, client setup and jsonl I/O.
+- ✅ Safer by default: paid calls are opt-in on the command line.
+- ⚠️ Older ADRs, step guides written before this change and the commit history still name the
+  old scripts; the table above is the translation. Guides were updated to the new commands.
+- ⚠️ `triage data splits` must not be re-run: it would draw a different sample (ADR-012 amendment).
+- ⚠️ More files and indirection than a script. The cost is worth it only because the project
+  keeps growing (training, quantisation, serving); a throwaway analysis should stay a notebook.

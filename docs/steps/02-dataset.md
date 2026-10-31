@@ -8,7 +8,7 @@
 
 ## 1. Run the script
 ```bash
-uv run python scripts/01_download_data.py
+uv run triage data download
 ```
 The first run downloads the dataset into `E:\hf_cache` (tens of MB). If you see a
 `ResourceTracker ... _recursion_count` error at the very end, ignore it: it's a known bug in

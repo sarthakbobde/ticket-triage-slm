@@ -11,7 +11,7 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 ## Phase 1 — Data
 - [x] 🤝 **02 Pick & explore a dataset** — find public support tickets, look at them, finalise the label set. → [02-dataset.md](steps/02-dataset.md)
 - [x] 🤝 **03 Split & label with a teacher model** — build the splits (ADR-012), pilot two teachers, label ~3.3k tickets (distillation). → [03-teacher-labels.md](steps/03-teacher-labels.md)
-- [x] 🧑 **04 Audit labels & gold set** — gold set labelled (drafted by Claude, reviewed by you); `data/labeled/merged/` is the training input. *Teacher-vs-gold check deferred: run `evals/run_model.py --config teacher --run teacher-gpt-4.1 --yes` (≈ $0.40) if training labels look doubtful.*
+- [x] 🧑 **04 Audit labels & gold set** — gold set labelled (drafted by Claude, reviewed by you); `data/labeled/merged/` is the training input. *Teacher-vs-gold check deferred: run `triage eval run --config teacher --run teacher-gpt-4.1 --yes` (≈ $0.40) if training labels look doubtful.*
 
 ## Phase 2 — Baseline & evals (before any training!)
 - [x] 🤝 **05 Eval harness** — metrics: JSON validity, per-field accuracy, macro-F1, latency. → [05-eval-harness.md](steps/05-eval-harness.md)

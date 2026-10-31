@@ -8,23 +8,23 @@ each GGUF quantisation) is run on the **same 200 gold tickets** and scored with 
 so the numbers can be compared fairly.
 
 ```
-gold tickets ─► evals/run_model.py ─► evals/runs/<run>.jsonl   (raw answers, not parsed)
+gold tickets ─► triage eval run ─► evals/runs/<run>.jsonl   (raw answers, not parsed)
                                               │
- data/gold/gold_labels.jsonl ──────────────► evals/score.py ─► evals/reports/<run>.md + .json
+ data/gold/gold_labels.jsonl ──────────────► triage eval score ─► evals/reports/<run>.md + .json
 ```
 
 ## Use it
 ```bash
 # 1. collect answers (local models are free; a remote endpoint needs --yes because it costs money)
-uv run python evals/run_model.py --config student_local --run base-untrained --format none
-uv run python evals/run_model.py --config teacher --run teacher-gpt-4.1 --format json_schema --yes
+uv run triage eval run --config student_local --run base-untrained --format none
+uv run triage eval run --config teacher --run teacher-gpt-4.1 --format json_schema --yes
 # 2. score (free)
-uv run python evals/score.py --run teacher-gpt-4.1
+uv run triage eval score --run teacher-gpt-4.1
 # 3. check the metric code itself
 uv run pytest
 ```
 
-## What is measured (src/triage/metrics.py)
+## What is measured (src/triage/evals/metrics.py)
 | Metric | Why |
 |---|---|
 | Valid JSON, fits the schema | A model that cannot produce the contract is useless, however smart. |

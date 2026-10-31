@@ -20,7 +20,7 @@ student_local:          # llama.cpp `llama-server` or Ollama, Step 10
   api_key_env: null
 
 # Step 06: untrained base models, served by Ollama (models stored on E:\Ollama\models).
-# Run with:  uv run python evals/run_model.py --config base_qwen --run base-qwen --format none
+# Run with:  uv run triage eval run --config base_qwen --run base-qwen --format none
 base_qwen:
   base_url: http://localhost:11434/v1
   model: qwen2.5:3b-instruct
