@@ -17,8 +17,8 @@ CATEGORY_DEFINITIONS = {
     Category.BILLING: "invoices, charges, payments, subscriptions, refunds of a charge",
     Category.OUTAGE: "a service is down or degraded for many users, or planned maintenance",
     Category.CUSTOMER_SERVICE: "account changes, orders, returns/exchanges, pre-sales and pricing "
-    "questions, general enquiries, complaints that are not a technical fault",
-    Category.HR: "employee matters: payroll, leave, onboarding, internal staff policies",
+    "questions, general enquiries, internal employee matters (payroll, onboarding, leave, "
+    "staff policies), and complaints that are not a technical fault",
 }
 
 _category_lines = "\n".join(f"    {c.value:<16} = {d}" for c, d in CATEGORY_DEFINITIONS.items())

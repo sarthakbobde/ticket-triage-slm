@@ -1,6 +1,7 @@
 """The output contract. Every component validates against this.
 
-See docs/DECISIONS.md#adr-001 for the reasoning, and ADR-010 / ADR-011 for v1.0 changes.
+See docs/DECISIONS.md#adr-001 for the reasoning, ADR-010 / ADR-011 for v1.0 changes and
+ADR-013 for v1.1 (hr merged into customer_service).
 
 Changing anything here means bumping SCHEMA_VERSION and re-labelling data.
 """
@@ -9,7 +10,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 
 
 class Category(str, Enum):
@@ -19,7 +20,6 @@ class Category(str, Enum):
     BILLING = "billing"
     OUTAGE = "outage"
     CUSTOMER_SERVICE = "customer_service"
-    HR = "hr"
 
 
 class Priority(str, Enum):

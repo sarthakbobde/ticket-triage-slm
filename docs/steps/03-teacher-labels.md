@@ -1,11 +1,12 @@
 # Step 03: Split & label with a teacher model
 
-**Who:** 🤝 (Claude wrote the scripts, you run them and judge the pilot) · **Status:** in progress · **Cost:** ≈ $0–5
+**Who:** 🤝 (Claude wrote the scripts, you run them and judge the pilot) · **Status:** labelling done; Step 04 next · **Cost:** ≈ $3.7 (assumed prices)
 
 ## Decisions used in this step
-- [ADR-005](../DECISIONS.md#adr-005): teacher = Gemini; the exact model is picked by a 50-ticket pilot
+- [ADR-005](../DECISIONS.md#adr-005): teacher = Azure AI Foundry `gpt-4.1` (amended from Gemini)
 - [ADR-010](../DECISIONS.md#adr-010): labels follow the written guidelines in `src/triage/prompts.py`
-- [ADR-012](../DECISIONS.md#adr-012): splits are built **before** labelling (see the 2026-10-30 amendment)
+- [ADR-012](../DECISIONS.md#adr-012): splits are built **before** labelling (see the amendments)
+- [ADR-013](../DECISIONS.md#adr-013): `hr` merged into `customer_service` (5 categories, schema v1.1)
 
 ## The idea: distillation
 A large model (the **teacher**) labels ~3,300 tickets with our full JSON schema. The small model
@@ -33,21 +34,21 @@ Writes `data/processed/{test,val,train}.jsonl` and `docs/reports/splits.md` (com
 | Test 500 first, natural distribution | Measures real-world performance. **Frozen**: the script refuses to overwrite it. |
 | 200 of test flagged `gold` | You hand-label these in Step 04 to measure the teacher itself. |
 | Val 300, natural | Used for the pilot and, later, for choosing checkpoints. |
-| Train ~2,500, capped at 416 per category | `hr` and `outage` get ~416 examples instead of ~50. |
+| Train ~2,500, capped at 416 per category | Rare classes get more examples than their natural share. |
 
 **Your check:** open `docs/reports/splits.md`. Does every category have enough test tickets
-to report a score? (Hint: look at `hr` in the gold column, ADR-012 warned about it.)
+to report a score? (Hint: `hr` had only 4 gold tickets. This is what led to ADR-013.)
 
 ## 2. Set up the key and model ids
-1. Put your Gemini key in `.env`: `TEACHER_API_KEY=...` (never commit it).
-2. List the model ids your key can use:
-   ```bash
-   uv run python scripts/03_label_with_teacher.py --list-models
-   ```
-3. In `configs/models.yaml` → `teacher.candidates`, fix the three ids if they differ, and fill
-   in their prices (USD per 1M tokens, ai.google.dev/pricing). Also set `rpm` to your tier's limit.
+1. Put your Foundry key in `.env` as `TEACHER_API_KEY=...` (never commit it, never put it in
+   `models.yaml`; that file only holds the *name* of the variable).
+2. `configs/models.yaml` → `teacher`: `base_url` is the Foundry `.../openai/v1/` endpoint and
+   `model` is the **deployment name** (`gpt-4.1`).
+3. Check the prices (USD per 1M tokens) in the Foundry portal. The values in the file are
+   assumptions ($2 in / $8 out).
+4. Every call to the teacher costs money: it is only run after you say yes.
 
-## 3. Pilot: same 50 tickets, three candidates (≈ $0.12)
+## 3. Pilot: same 50 tickets (done with the Gemini candidates, kept as history)
 ```bash
 uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-3.8-flash
 uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-3.5-flash-lite
@@ -78,21 +79,35 @@ Open `docs/reports/pilot.md`.
 3. **Decide:** pick the cheaper model unless the stronger one is *clearly* better on your review
    (ADR-005). Set `teacher.model` in `configs/models.yaml` and record the choice and the cost in ADR-005.
 
-## 5. Label the full set (val + train)
+## 5. Label val and train
 ```bash
 uv run python scripts/03_label_with_teacher.py --split val
 uv run python scripts/03_label_with_teacher.py --split train
 ```
-About 2,800 calls. At 10 requests/minute that is roughly 5 hours; it's resumable, so run it in
-the background and restart if it stops. Do **not** label `test` yet: you hand-label the gold
-set first in Step 04, so the teacher's answers can't anchor you.
+Resumable: re-running skips ids already written. Do **not** label `test` yet: you hand-label
+the gold set first in Step 04, so the teacher's answers can't anchor you.
+
+## 5b. Mine rare classes, then merge `hr` (what actually happened)
+The first 1,000 training tickets had only 1% `hr` and 3% `customer_service`.
+```bash
+uv run python scripts/03_mine_rare_classes.py                       # ROUND = 1 or 2 inside the file
+uv run python scripts/03_label_with_teacher.py --split train_extra  # (round 2: train_extra2)
+uv run python scripts/03_merge_hr.py                                # free, no API call
+```
+Mining only *picks* tickets by keyword; the teacher decides the real category. Round 1 gave
+115 `customer_service` but only 34 `hr`; a stricter round 2 reached 38 and the pool ran out
+(about 41 genuine HR tickets exist). So ADR-013 merges `hr` into `customer_service`.
+`03_merge_hr.py` writes `data/labeled/merged/*.jsonl`: **use these in Step 04 onwards**.
+The full reasoning, with charts, is in `notebooks/03_teacher_labels.ipynb`.
 
 ## 6. Findings
-1. Splits (category counts look sensible?):
-2. Pilot winner and why:
-3. Failure rate (failed calls / tickets):
-4. Actual cost of the full run:
-5. Anything the teacher gets systematically wrong (update `prompts.py`? that's a new ADR):
+1. Splits: test 500 (200 gold), val 300, train 2,496, cap 416. `hr` had 4 gold tickets.
+2. Teacher: Azure `gpt-4.1` (the only deployment the key could reach).
+3. Failure rate: 0 failed out of 1,840 labelled (val 300, train 1,000, mined 540).
+4. Cost: about $3.7 at assumed prices; confirm in the portal.
+5. Systematic issues: teacher–dataset agreement is only 37% because the dataset's queue labels
+   are mostly unrelated to the text (ADR-010). Genuine `hr` is too rare to learn, so it was merged
+   (ADR-013). Priority is skewed (medium only 20%): check it against the gold set in Step 04.
 
 ## What you learn
 Distillation, constrained decoding, schema validation as a contract, resumable and

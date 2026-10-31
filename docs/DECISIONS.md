@@ -17,14 +17,15 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [002](#adr-002) | Base model 1.5B–3B; family picked at Step 06 | Accepted | 2026-10-29 |
 | [003](#adr-003) | Train on Kaggle, serve on laptop via GGUF | Accepted | 2026-10-29 |
 | [004](#adr-004) | uv, Pydantic, OpenAI-compatible clients everywhere | Accepted | 2026-10-29 |
-| [005](#adr-005) | Teacher = Gemini; exact model chosen by a 50-ticket pilot | Accepted (model TBD at Step 03) | 2026-10-29 |
+| [005](#adr-005) | Teacher = Gemini; exact model chosen by a 50-ticket pilot | Accepted; amended: teacher is Azure `gpt-4.1` | 2026-10-29 |
 | [006](#adr-006) | All decisions kept in one file | Accepted | 2026-10-29 |
 | [007](#adr-007) | Dataset = Tobi-Bueck/customer-support-tickets, English only | Accepted | 2026-10-29 |
 | [008](#adr-008) | ~~Categories = dataset's top queues; priority mapped 5 → 4 levels~~ | Superseded by ADR-010 | 2026-10-29 |
 | [009](#adr-009) | EDA in notebooks, pipeline in scripts; notebook tools as uv dev deps | Accepted | 2026-10-29 |
-| [010](#adr-010) | 6 merged categories, 3 priorities; truth = teacher + hand-labelled gold set | Accepted | 2026-10-30 |
+| [010](#adr-010) | 6 merged categories, 3 priorities; truth = teacher + hand-labelled gold set | Accepted; amended: 5 categories (ADR-013) | 2026-10-30 |
 | [011](#adr-011) | `entities` replaced by `products: list[str]` | Accepted | 2026-10-30 |
 | [012](#adr-012) | Test set first (natural distribution), capped training sample, 200-ticket gold set | Accepted | 2026-10-30 |
+| [013](#adr-013) | Merge `hr` into `customer_service` (5 categories, schema v1.1); mine extra rare-class tickets | Accepted | 2026-10-31 |
 
 ## Template
 
@@ -249,6 +250,17 @@ commercial model. If this ever became commercial, revisit this ADR.
   synthetic data), never acceptable for real customer tickets.
 - ⚠️ Promo prices change after 2026-11-30 / 2026-12-31. Re-check before the full run.
 
+**Amendment (2026-10-31, Step 03):** the teacher is **Azure AI Foundry `gpt-4.1`**, not Gemini.
+- Why: the user already has Foundry access, and it was the only chat deployment the key could
+  reach (the other names we probed returned 404). It is a non-reasoning model, accepts
+  `temperature: 0` and `json_schema`, and uses the same OpenAI-compatible client (ADR-004).
+- Set in `configs/models.yaml` (endpoint `.../openai/v1/`, key in `.env` as `TEACHER_API_KEY`).
+- Cost so far is about $3.7 at assumed prices of $2 in / $8 out per 1M tokens. **These prices are
+  unverified**; confirm them in the Foundry portal.
+- The Gemini price table above is kept as the record of what was considered.
+- The Terms note applies to Google only. Check Azure OpenAI's terms on using outputs for
+  training before this ever becomes more than a learning project.
+
 ---
 
 <a id="adr-006"></a>
@@ -422,6 +434,12 @@ Baseline with merged queues (5-fold CV):
 - ⚠️ Teacher–dataset agreement will be modest (~0.6–0.7). That's expected, not a bug.
 - ⚠️ Changing `CATEGORY_DEFINITIONS` changes the truth: new ADR + `SCHEMA_VERSION` bump + relabel.
 
+**Amendment (2026-10-31, Step 03):** the category set is now **five**, see ADR-013. `hr` is
+folded into `customer_service`. The rest of this ADR (truth = written guidelines + teacher +
+gold set; dataset labels only as a cross-check) is unchanged. The measured teacher–dataset
+agreement is only **37%**, lower than the 0.6–0.7 expected above, because the dataset's queue
+labels are largely unrelated to the ticket text; the teacher follows the guidelines.
+
 ---
 
 <a id="adr-011"></a>
@@ -490,3 +508,49 @@ All splits use `SEED = 42`. Total to label with the teacher: ~3,300 tickets (cos
   reordered: `02_build_splits.py` → `03_label_with_teacher.py`.
 - The test set is labelled by the teacher only **after** you hand-label the gold set (Step 04),
   so you can't anchor on the teacher's answers even by accident.
+- **(2026-10-31)** With five categories (ADR-013) the per-category cap no longer applies to a
+  separate `hr` class. The splits were built under schema v1.0 and are **frozen**: do not re-run
+  `02_build_splits.py`, because `dataset_map.py` now maps Human Resources to `customer_service`
+  and the script would draw a different sample.
+
+---
+
+<a id="adr-013"></a>
+## ADR-013 — Merge `hr` into `customer_service`; mine extra rare-class tickets
+**Status:** Accepted · **Date:** 2026-10-31 · **Step:** 03 · **Amends:** ADR-010 (category set), ADR-012
+
+### Context
+After labelling 1,000 training tickets the teacher found only **1.4% `hr`** and **3.3%
+`customer_service`**. Two rounds of keyword mining over the unused pool added examples:
+round 1 picked 500 tickets (200 for hr, 300 for customer_service), round 2 a stricter hr search
+(40 tickets). Result: `customer_service` reached 115 examples, but `hr` stopped at **38**.
+The pool is exhausted: about 41 genuine HR tickets exist in 21,816 unused tickets, and 38–39 were
+found. The dataset's "Human Resources" queue is mostly not HR (about 9% of it is). In the
+test set that leaves roughly **one** genuine hr ticket, so a score for `hr` would be meaningless
+and one miss would move macro-F1 by several points. Details: `notebooks/03_teacher_labels.ipynb`.
+
+### Options
+1. Keep six categories and live with 38 training / ~1 test example.
+2. Delete the 38 hr tickets and the category.
+3. **Merge `hr` into `customer_service`** and widen its definition.
+
+### Decision
+Option 3. Schema **v1.1** has five categories: `technical`, `product`, `billing`, `outage`,
+`customer_service`. The `customer_service` definition now includes internal employee matters
+(payroll, onboarding, leave, staff policies). `Human Resources` in `dataset_map.py` maps to
+`customer_service`.
+- The teacher labelled with the six-category prompt. **It is not called again.**
+  `scripts/03_merge_hr.py` copies the labels and changes `hr` to `customer_service`
+  (39 rows: val 1, train 14, train_extra 20, train_extra2 4). Raw files are untouched; merged
+  files go to `data/labeled/merged/` and keep `merged_from: "hr"`.
+- Training-set counts after the merge (1,540 labelled): product 692, technical 448,
+  customer_service 153, billing 142, outage 105.
+
+### Consequences
+- ✅ Every category has enough examples to learn and to report a score.
+- ✅ No tickets are thrown away.
+- ⚠️ Mining was biased towards rare classes, so the training mix is not the natural mix. The
+  test set stays natural. Priority is skewed (medium only 20%): check against the gold set.
+- ⚠️ `customer_service` is now a mixed bucket. If HR routing ever matters, it needs its own
+  data first.
+- ⚠️ Any later change to the definitions needs a new ADR and a version bump again.

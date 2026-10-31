@@ -16,5 +16,5 @@ QUEUE_TO_CATEGORY = {
     "Sales and Pre-Sales": Category.CUSTOMER_SERVICE,
     "General Inquiry": Category.CUSTOMER_SERVICE,
     "Returns and Exchanges": Category.CUSTOMER_SERVICE,
-    "Human Resources": Category.HR,
+    "Human Resources": Category.CUSTOMER_SERVICE,  # hr merged in, ADR-013
 }
