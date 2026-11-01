@@ -17,3 +17,5 @@ data/gold/*
 !data/gold/gold_labels.jsonl
 # generated training files (rebuilt by scripts/07_prepare_training_data.py)
 data/training/
+# adapters and merged models are large; rebuilt from the Kaggle adapter
+models/

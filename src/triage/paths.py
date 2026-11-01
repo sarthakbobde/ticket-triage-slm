@@ -25,4 +25,8 @@ EVALS = ROOT / "evals"
 EVAL_RUNS = EVALS / "runs"  # raw model answers (git-ignored)
 EVAL_REPORTS = EVALS / "reports"  # scored reports (committed)
 
+MODELS = ROOT / "models"  # adapters and merged models: large, git-ignored
+ADAPTERS = MODELS / "adapters"
+MERGED_MODELS = MODELS / "merged"
+
 DOC_REPORTS = ROOT / "docs" / "reports"

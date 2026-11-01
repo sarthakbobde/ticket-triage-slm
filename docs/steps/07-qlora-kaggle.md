@@ -64,7 +64,33 @@ Compare with `evals/reports/base-qwen-schema.md` (that comparison is Step 08).
 2. The "answers parse as JSON" count at the end of the notebook.
 3. Then the real test in Step 08: per-field scores against the baseline numbers in ADR-014.
 
-## Findings (fill in after the run)
-1. Training time and final train / validation loss:
-2. Valid JSON on the gold set:
-3. Anything that broke on Kaggle:
+## What broke on Kaggle, and the fixes (2026-11-01)
+Kaggle installs the newest libraries (`transformers` 5.22, `trl` 1.17, `peft` 0.21), which differ
+from the versions this notebook was first written against. Four things needed changing; all are in
+the notebook now:
+
+| Error | Cause | Fix |
+|---|---|---|
+| `SFTConfig ... unexpected keyword 'warmup_ratio'` | Renamed in `transformers` 5 | `warmup_steps=15` (about 5% of 291 steps) |
+| `SFTTrainer does not support nn.DataParallel` | "GPU T4 x2" makes two GPUs visible | `os.environ["CUDA_VISIBLE_DEVICES"] = "0"` at the very top, before `torch` loads (needs a restart if torch is already running) |
+| Model loaded in the wrong number format | `torch_dtype=` was renamed `dtype=` | `dtype=torch.float16` |
+| `_amp_foreach_non_finite_check_and_unscale_cuda not implemented for 'BFloat16'` | LoRA adapters were created in bf16, which the T4's fp16 gradient scaler cannot handle | convert the trainable parameters to float32 before training |
+
+Lesson: when a notebook depends on fast-moving libraries, pin their versions (or write down the
+versions that worked: `torch 2.11`, `transformers 5.22.1`, `peft 0.21.2`, `trl 1.17.1`).
+
+## Findings
+1. Training: 3 epochs, 78.9 minutes on a Kaggle T4. Train loss 0.39 -> 0.17; validation loss 0.378 -> best 0.322 (step 200) -> 0.329 at the end. Validation flattened after about step 150, so 2 epochs would probably do.
+2. Valid JSON on the gold set: 200 of 200, fits the schema 200 of 200.
+3. Broke on Kaggle: four library-version problems, listed above.
+4. Scored against the baseline (`evals/reports/ft-qwen-kaggle.md`): see ADR-014 for the baseline numbers.
+
+| Metric | Base Qwen (schema-enforced) | Fine-tuned |
+|---|---|---|
+| Category accuracy | 75.5% | 79.5% |
+| Category macro-F1 | 62.5% | 65.7% |
+| Priority accuracy | 40.5% | 70.0% |
+| Sentiment accuracy | 63.0% | 72.0% |
+| Products F1 | 65.0% | 88.0% |
+
+Main weakness left: `customer_service` recall is 6% (2 of 32 gold tickets), 24 of them go to `product`.

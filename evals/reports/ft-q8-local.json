@@ -1,0 +1,16 @@
+{
+  "run": "ft-q8-local",
+  "tickets": 200,
+  "json_valid": 1.0,
+  "schema_valid": 1.0,
+  "category_accuracy": 0.785,
+  "category_macro_f1": 0.6241743841743842,
+  "priority_accuracy": 0.72,
+  "priority_off_by_one": 0.28,
+  "sentiment_accuracy": 0.795,
+  "products_f1": 0.840952380952381,
+  "reply_promise_rate": 0.0,
+  "latency_p50_s": 6.257,
+  "latency_p95_s": 7.736,
+  "avg_output_tokens": 102.305
+}

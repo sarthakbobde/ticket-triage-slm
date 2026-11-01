@@ -14,9 +14,20 @@ teacher:                # ADR-005 (amended): Azure AI Foundry, OpenAI-compatible
   candidates:
     gpt-4.1: {input: 2.0, output: 8.0}
 
-student_local:          # llama.cpp `llama-server` or Ollama, Step 10
-  base_url: http://localhost:8080/v1
+# Step 09: the fine-tuned Qwen at three compression levels, served by Ollama (GGUF from llama.cpp).
+student_q4:
+  base_url: http://localhost:11434/v1
   model: ticket-triage-q4
+  api_key_env: null
+
+student_q5:
+  base_url: http://localhost:11434/v1
+  model: ticket-triage-q5
+  api_key_env: null
+
+student_q8:
+  base_url: http://localhost:11434/v1
+  model: ticket-triage-q8
   api_key_env: null
 
 # Step 06: untrained base models, served by Ollama (models stored on E:\Ollama\models).

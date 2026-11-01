@@ -18,11 +18,11 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 - [x] 🧑 **06 Baseline** — run two *untrained* small models through the harness; Qwen2.5-3B chosen (ADR-014). *Teacher row deferred.* → [06-baseline.md](steps/06-baseline.md)
 
 ## Phase 3 — Fine-tuning
-- [ ] 🤝 **07 QLoRA on Kaggle** — train, track loss, save the adapter. *Data script and notebook written; waiting for the Kaggle run.* → [07-qlora-kaggle.md](steps/07-qlora-kaggle.md)
-- [ ] 🧑 **08 Evaluate the fine-tune** — compare against baseline. Iterate on data, not just hyperparams.
+- [x] 🤝 **07 QLoRA on Kaggle** — train, track loss, save the adapter. *Data script and notebook written; waiting for the Kaggle run.* → [07-qlora-kaggle.md](steps/07-qlora-kaggle.md)
+- [x] 🧑 **08 Evaluate the fine-tune** — compare against baseline. Iterate on data, not just hyperparams.
 
 ## Phase 4 — Inference
-- [ ] 🤝 **09 Merge + quantize to GGUF** — Q4/Q5/Q8, measure quality loss per level.
+- [x] 🤝 **09 Merge + quantize to GGUF** — Q4/Q5/Q8, measure quality loss per level. → [09-gguf-ollama.md](steps/09-gguf-ollama.md)
 - [ ] 🧑 **10 Serve locally** — llama.cpp / Ollama on the GTX 1650.
 - [ ] 🤝 **11 Gateway** — FastAPI, schema validation, fallback to teacher when low-confidence, logging.
 
