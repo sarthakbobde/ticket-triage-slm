@@ -28,6 +28,7 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [013](#adr-013) | Merge `hr` into `customer_service` (5 categories, schema v1.1); mine extra rare-class tickets | Accepted | 2026-10-31 |
 | [014](#adr-014) | Base model = Qwen2.5-3B-Instruct, chosen from an untrained baseline vs Llama 3.2 3B | Accepted | 2026-10-31 |
 | [015](#adr-015) | Restructure into an installable package with one `triage` CLI, tests, lint and CI | Accepted | 2026-10-31 |
+| [016](#adr-016) | Serve the fine-tune as Q4_K_M GGUF through Ollama | Accepted | 2026-11-01 |
 
 ## Template
 
@@ -660,3 +661,27 @@ true tickets, as the eval harness does.
 - ⚠️ `triage data splits` must not be re-run: it would draw a different sample (ADR-012 amendment).
 - ⚠️ More files and indirection than a script. The cost is worth it only because the project
   keeps growing (training, quantisation, serving); a throwaway analysis should stay a notebook.
+
+---
+
+<a id="adr-016"></a>
+## ADR-016 — Serve the fine-tune as Q4_K_M GGUF through Ollama
+**Status:** Accepted · **Date:** 2026-11-01 · **Step:** 09
+
+### Context
+The fine-tuned Qwen2.5-3B (ADR-014, Step 07) was merged and converted to GGUF at three compression
+levels, each scored on the 200 gold tickets on the GTX 1650 (plugged in). Details: `docs/steps/09-gguf-ollama.md`.
+
+### Decision
+Serve **Q4_K_M** (`ticket-triage-q4`, 1.9 GB) through Ollama.
+- Quality: within noise of Q8_0 and Q5_K_M (category 77.5% vs 78.5% / 79.5%; sentiment and products on par).
+- Speed: p50 2.3 s vs 2.7 s (Q5) and 6.3 s (Q8, which spills onto the CPU).
+- Size: runs 100% on the 4 GB GPU with room for the context.
+Q5_K_M is the fallback if a later, larger gold set shows Q4 losing accuracy.
+
+### Consequences
+- ✅ The local model matches the teacher on this gold set (category 77.5-79.5% for both) at no per-ticket cost.
+- ⚠️ A single request is slower locally (2.3 s) than the Azure teacher (1.3 s): the case for the small model is cost, privacy and control, not latency on this GPU.
+- ⚠️ 200 gold tickets cannot separate quantization levels that differ by a few points.
+- ⚠️ Remaining label disagreements (`customer_service`, priority) are inherited from the teacher (Step 08 finding).
+- ⚠️ Ollama 0.40 imports only finished GGUF files; conversion needs llama.cpp's tools (b12024).

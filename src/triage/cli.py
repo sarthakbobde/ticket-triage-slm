@@ -21,6 +21,7 @@ import logging
 import sys
 from collections.abc import Callable
 
+from triage import paths
 from triage.errors import UserError
 
 log = logging.getLogger("triage")
@@ -98,6 +99,22 @@ def cmd_eval_score(args: argparse.Namespace) -> None:
     print("\n".join(lines))
 
 
+def cmd_export_merge(args: argparse.Namespace) -> None:
+    from pathlib import Path
+
+    from triage.export.merge import merge_adapter
+
+    merge_adapter(Path(args.adapter), Path(args.out))
+
+
+def cmd_export_ollama(args: argparse.Namespace) -> None:
+    from pathlib import Path
+
+    from triage.export.ollama import create_ollama_model
+
+    create_ollama_model(Path(args.gguf), args.name)
+
+
 # ---- the parser: which words and options exist -----------------------------------------------
 
 
@@ -157,6 +174,23 @@ def build_parser() -> argparse.ArgumentParser:
     score = evaluate.add_parser("score", help="score a run against the gold labels (free)")
     score.add_argument("--run", required=True)
     score.set_defaults(handler=cmd_eval_score)
+
+    # triage export ...
+    export = commands.add_parser("export", help="merge the adapter and import into Ollama").add_subparsers(
+        dest="action", required=True
+    )
+    merge_cmd = export.add_parser(
+        "merge", help="merge the LoRA adapter into the base model (needs the export extra)"
+    )
+    merge_cmd.add_argument("--adapter", default=str(paths.ADAPTERS / "qwen-triage-lora-v1"))
+    merge_cmd.add_argument("--out", default=str(paths.MERGED_MODELS / "qwen-triage-v1"))
+    merge_cmd.set_defaults(handler=cmd_export_merge)
+    ollama_cmd = export.add_parser("ollama", help="import a GGUF file into Ollama")
+    ollama_cmd.add_argument(
+        "--gguf", required=True, help="path to the .gguf file, e.g. models/gguf/...-Q4_K_M.gguf"
+    )
+    ollama_cmd.add_argument("--name", required=True, help="Ollama model name, e.g. ticket-triage-q4")
+    ollama_cmd.set_defaults(handler=cmd_export_ollama)
 
     return parser
 

@@ -16,6 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 serve = ["fastapi>=0.111", "uvicorn>=0.30"]
+# Step 09: merging the LoRA adapter into the base model (runs on the CPU). Same versions as the Kaggle run.
+export = ["torch>=2.3", "transformers>=5.22,<6", "peft>=0.21,<0.22", "accelerate>=0.33"]
 
 [project.scripts]
 triage = "triage.cli:main"
