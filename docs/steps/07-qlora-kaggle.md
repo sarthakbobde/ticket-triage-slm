@@ -64,6 +64,21 @@ Compare with `evals/reports/base-qwen-schema.md` (that comparison is Step 08).
 2. The "answers parse as JSON" count at the end of the notebook.
 3. Then the real test in Step 08: per-field scores against the baseline numbers in ADR-014.
 
+## What broke on Kaggle, and the fixes (2026-11-01)
+Kaggle installs the newest libraries (`transformers` 5.22, `trl` 1.17, `peft` 0.21), which differ
+from the versions this notebook was first written against. Four things needed changing; all are in
+the notebook now:
+
+| Error | Cause | Fix |
+|---|---|---|
+| `SFTConfig ... unexpected keyword 'warmup_ratio'` | Renamed in `transformers` 5 | `warmup_steps=15` (about 5% of 291 steps) |
+| `SFTTrainer does not support nn.DataParallel` | "GPU T4 x2" makes two GPUs visible | `os.environ["CUDA_VISIBLE_DEVICES"] = "0"` at the very top, before `torch` loads (needs a restart if torch is already running) |
+| Model loaded in the wrong number format | `torch_dtype=` was renamed `dtype=` | `dtype=torch.float16` |
+| `_amp_foreach_non_finite_check_and_unscale_cuda not implemented for 'BFloat16'` | LoRA adapters were created in bf16, which the T4's fp16 gradient scaler cannot handle | convert the trainable parameters to float32 before training |
+
+Lesson: when a notebook depends on fast-moving libraries, pin their versions (or write down the
+versions that worked: `torch 2.11`, `transformers 5.22.1`, `peft 0.21.2`, `trl 1.17.1`).
+
 ## Findings (fill in after the run)
 1. Training time and final train / validation loss:
 2. Valid JSON on the gold set:
