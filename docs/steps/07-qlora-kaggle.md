@@ -79,7 +79,18 @@ the notebook now:
 Lesson: when a notebook depends on fast-moving libraries, pin their versions (or write down the
 versions that worked: `torch 2.11`, `transformers 5.22.1`, `peft 0.21.2`, `trl 1.17.1`).
 
-## Findings (fill in after the run)
-1. Training time and final train / validation loss:
-2. Valid JSON on the gold set:
-3. Anything that broke on Kaggle:
+## Findings
+1. Training: 3 epochs, 78.9 minutes on a Kaggle T4. Train loss 0.39 -> 0.17; validation loss 0.378 -> best 0.322 (step 200) -> 0.329 at the end. Validation flattened after about step 150, so 2 epochs would probably do.
+2. Valid JSON on the gold set: 200 of 200, fits the schema 200 of 200.
+3. Broke on Kaggle: four library-version problems, listed above.
+4. Scored against the baseline (`evals/reports/ft-qwen-kaggle.md`): see ADR-014 for the baseline numbers.
+
+| Metric | Base Qwen (schema-enforced) | Fine-tuned |
+|---|---|---|
+| Category accuracy | 75.5% | 79.5% |
+| Category macro-F1 | 62.5% | 65.7% |
+| Priority accuracy | 40.5% | 70.0% |
+| Sentiment accuracy | 63.0% | 72.0% |
+| Products F1 | 65.0% | 88.0% |
+
+Main weakness left: `customer_service` recall is 6% (2 of 32 gold tickets), 24 of them go to `product`.
