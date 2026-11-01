@@ -15,13 +15,13 @@ so its answers move towards the teacher's. The big model stays frozen and squeez
 
 ```
 laptop                              Kaggle (free T4)                        laptop
-scripts/07_prepare_training_data -> notebooks/07_train_qwen_kaggle.ipynb -> evals/score.py
+triage data training-data -> notebooks/07_train_qwen_kaggle.ipynb -> triage eval score
   data/training/*.jsonl  --upload-->  train, save adapter, answer 200 gold  --download--> Step 08
 ```
 
 ## 1. Prepare the data (free, 5 s)
 ```bash
-uv run python scripts/07_prepare_training_data.py
+uv run triage data training-data
 ```
 Writes `data/training/` (git-ignored): `train.jsonl` (1,540), `val.jsonl` (300), `gold_prompts.jsonl` (200, **no labels**).
 The script refuses to continue if any training ticket (or a copy of its text) is in the test or val set.
@@ -44,7 +44,7 @@ APIs but has not been run on Kaggle yet, and library versions drift.
 ## 3. Score it (free)
 ```bash
 # put ft-qwen-kaggle.jsonl into evals/runs/ first
-uv run python evals/score.py --run ft-qwen-kaggle
+uv run triage eval score --run ft-qwen-kaggle
 ```
 Compare with `evals/reports/base-qwen-schema.md` (that comparison is Step 08).
 

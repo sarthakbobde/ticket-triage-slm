@@ -7,7 +7,7 @@ import json
 
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
 
-from triage import metrics
+from triage.evals import metrics
 
 CLASSES = ["technical", "product", "billing"]
 TRUE = ["technical", "technical", "product", "product", "billing", "billing", "technical", "product"]
@@ -20,7 +20,9 @@ def test_accuracy_matches_sklearn():
 
 def test_class_scores_match_sklearn():
     ours = metrics.class_scores(TRUE, PRED, CLASSES)
-    precision, recall, f1, support = precision_recall_fscore_support(TRUE, PRED, labels=CLASSES, zero_division=0)
+    precision, recall, f1, support = precision_recall_fscore_support(
+        TRUE, PRED, labels=CLASSES, zero_division=0
+    )
     for i, name in enumerate(CLASSES):
         assert abs(ours[name]["precision"] - precision[i]) < 1e-9
         assert abs(ours[name]["recall"] - recall[i]) < 1e-9
@@ -69,8 +71,12 @@ def test_percentile():
 
 def test_parse_answer_kinds():
     good = {
-        "category": "billing", "priority": "low", "sentiment": "neutral",
-        "products": [], "summary": "s", "suggested_reply": "r",
+        "category": "billing",
+        "priority": "low",
+        "sentiment": "neutral",
+        "products": [],
+        "summary": "s",
+        "suggested_reply": "r",
     }
     answer, problem = metrics.parse_answer(json.dumps(good))
     assert problem == "" and answer.category.value == "billing"

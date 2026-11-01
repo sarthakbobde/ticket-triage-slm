@@ -23,7 +23,7 @@ tickets ─► 02_build_splits ─► test / val / train (unlabelled)
 
 ## 1. Build the splits (free, ~10 s)
 ```bash
-uv run python scripts/02_build_splits.py
+uv run triage data splits
 ```
 Writes `data/processed/{test,val,train}.jsonl` and `docs/reports/splits.md` (commit the report).
 
@@ -50,10 +50,10 @@ to report a score? (Hint: `hr` had only 4 gold tickets. This is what led to ADR-
 
 ## 3. Pilot: same 50 tickets (done with the Gemini candidates, kept as history)
 ```bash
-uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-3.8-flash
-uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-3.5-flash-lite
-uv run python scripts/03_label_with_teacher.py --split val --limit 50 --model gemini-2.5-flash-lite
-uv run python scripts/03_pilot_report.py
+uv run triage label --split val --limit 50 --model gemini-3.8-flash
+uv run triage label --split val --limit 50 --model gemini-3.5-flash-lite
+uv run triage label --split val --limit 50 --model gemini-2.5-flash-lite
+uv run triage pilot-report
 ```
 If a call fails with an error about `response_format` or the schema, set
 `response_format: json_object` in `configs/models.yaml` and re-run. Validation still catches bad output.
@@ -81,8 +81,8 @@ Open `docs/reports/pilot.md`.
 
 ## 5. Label val and train
 ```bash
-uv run python scripts/03_label_with_teacher.py --split val
-uv run python scripts/03_label_with_teacher.py --split train
+uv run triage label --split val
+uv run triage label --split train
 ```
 Resumable: re-running skips ids already written. Do **not** label `test` yet: you hand-label
 the gold set first in Step 04, so the teacher's answers can't anchor you.
@@ -90,9 +90,9 @@ the gold set first in Step 04, so the teacher's answers can't anchor you.
 ## 5b. Mine rare classes, then merge `hr` (what actually happened)
 The first 1,000 training tickets had only 1% `hr` and 3% `customer_service`.
 ```bash
-uv run python scripts/03_mine_rare_classes.py                       # ROUND = 1 or 2 inside the file
-uv run python scripts/03_label_with_teacher.py --split train_extra  # (round 2: train_extra2)
-uv run python scripts/03_merge_hr.py                                # free, no API call
+uv run triage data mine --round 2   # round 1 is already done
+uv run triage label --split train_extra  # (round 2: train_extra2)
+uv run triage data merge-hr   # free, no API call
 ```
 Mining only *picks* tickets by keyword; the teacher decides the real category. Round 1 gave
 115 `customer_service` but only 34 `hr`; a stricter round 2 reached 38 and the pool ran out

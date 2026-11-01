@@ -12,11 +12,11 @@ not tell whether fine-tuning helped, or by how much. It also decides which base 
 - `configs/models.yaml` sections `base_qwen` and `base_llama` point at `http://localhost:11434/v1`.
 - Four runs on the 200 gold tickets (plain prompt vs schema-enforced, per model):
   ```bash
-  uv run python evals/run_model.py --config base_qwen  --run base-qwen-none    --format none
-  uv run python evals/run_model.py --config base_llama --run base-llama-none   --format none
-  uv run python evals/run_model.py --config base_qwen  --run base-qwen-schema  --format json_schema
-  uv run python evals/run_model.py --config base_llama --run base-llama-schema --format json_schema
-  uv run python evals/score.py --run <each run name>
+  uv run triage eval run --config base_qwen  --run base-qwen-none    --format none
+  uv run triage eval run --config base_llama --run base-llama-none   --format none
+  uv run triage eval run --config base_qwen  --run base-qwen-schema  --format json_schema
+  uv run triage eval run --config base_llama --run base-llama-schema --format json_schema
+  uv run triage eval score --run <each run name>
   ```
   Reports are in `evals/reports/`; the raw answers (`evals/runs/`) are git-ignored.
 
