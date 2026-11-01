@@ -1,0 +1,16 @@
+{
+  "run": "teacher-gpt-4.1",
+  "tickets": 200,
+  "json_valid": 1.0,
+  "schema_valid": 0.995,
+  "category_accuracy": 0.795,
+  "category_macro_f1": 0.6635491392013131,
+  "priority_accuracy": 0.685,
+  "priority_off_by_one": 0.305,
+  "sentiment_accuracy": 0.7,
+  "products_f1": 0.8501666666666666,
+  "reply_promise_rate": 0.0,
+  "latency_p50_s": 1.264,
+  "latency_p95_s": 1.652,
+  "avg_output_tokens": 94.535
+}
