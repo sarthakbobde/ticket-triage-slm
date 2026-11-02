@@ -90,7 +90,11 @@ def test_remote_endpoints_need_approval_but_local_ones_do_not():
 
 
 def test_schema_has_the_five_categories_and_no_hr():
-    assert {c.value for c in Category} == {"technical", "product", "billing", "outage", "customer_service"}
+    category_names = []
+    for category in Category:
+        category_names.append(category.value)
+    assert category_names == ["technical", "product", "billing", "outage", "customer_service"]
+    assert "hr" not in category_names
     assert SCHEMA_VERSION == "1.1"
 
 

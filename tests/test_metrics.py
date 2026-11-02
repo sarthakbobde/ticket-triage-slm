@@ -20,9 +20,7 @@ def test_accuracy_matches_sklearn():
 
 def test_class_scores_match_sklearn():
     ours = metrics.class_scores(TRUE, PRED, CLASSES)
-    precision, recall, f1, support = precision_recall_fscore_support(
-        TRUE, PRED, labels=CLASSES, zero_division=0
-    )
+    precision, recall, f1, support = precision_recall_fscore_support(TRUE, PRED, labels=CLASSES, zero_division=0)
     for i, name in enumerate(CLASSES):
         assert abs(ours[name]["precision"] - precision[i]) < 1e-9
         assert abs(ours[name]["recall"] - recall[i]) < 1e-9

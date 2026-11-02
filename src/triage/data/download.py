@@ -2,125 +2,169 @@
 
 Outputs
 - data/raw/tickets_en.jsonl          one ticket per line (git-ignored)
-- docs/reports/dataset-profile.md    stats used to finalise the schema (committed)
+- docs/reports/dataset-profile.md    numbers used to finalise the schema (committed)
 
 See docs/steps/02-dataset.md for what to look for in the output.
 """
 
 import hashlib
 import logging
-from collections import Counter
 
 import pandas as pd
-from datasets import load_dataset
 
 from triage import paths
 
 log = logging.getLogger(__name__)
 
 DATASET = "Tobi-Bueck/customer-support-tickets"
-MIN_BODY_CHARS = 30  # anything shorter can't be triaged meaningfully
-SEED = 42  # fixed so the random examples are the same every run
+MIN_BODY_CHARS = 30  # anything shorter cannot be triaged meaningfully
+SEED = 42  # fixed, so the random examples at the end are the same every run
 
 
-def make_id(text: str) -> str:
-    """Stable id from content: same ticket gives the same id on every run and machine.
+def make_id(text):
+    """A stable id made from the ticket's text: the same ticket gets the same id on every run.
 
-    Row numbers would change if the dataset is re-ordered upstream; a content hash won't.
-    It also makes exact duplicates easy to spot (same id twice).
+    Row numbers would change if the dataset were re-ordered. A fingerprint of the text does not.
+    It also makes exact duplicates easy to spot (the same id twice).
     """
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:12]  # [:12] = the first 12 characters
 
 
-def counts_table(series: pd.Series, title: str) -> str:
+def counts_table(series, title):
+    """A markdown table: how many times each value appears, and what percent of all rows that is."""
     value_counts = series.fillna("<missing>").value_counts()
-    lines = [f"### {title}", "", "| value | count | % |", "|---|---|---|"]
+    lines = []
+    lines.append(f"### {title}")
+    lines.append("")
+    lines.append("| value | count | % |")
+    lines.append("|---|---|---|")
     for value, n in value_counts.items():
         lines.append(f"| {value} | {n} | {100 * n / len(series):.1f} |")
     return "\n".join(lines) + "\n"
 
 
-def crosstab_table(rows: pd.Series, cols: pd.Series) -> str:
-    """Row-normalised crosstab: of tickets in this queue, what % have each priority?"""
-    ct = (pd.crosstab(rows, cols, normalize="index") * 100).round(1)
-    header = "| " + " | ".join([rows.name, *map(str, ct.columns)]) + " |"
-    lines = [header, "|---" * (len(ct.columns) + 1) + "|"]
-    for index, values in ct.iterrows():
-        lines.append("| " + " | ".join([str(index), *(f"{v:.1f}" for v in values)]) + " |")
+def crosstab_table(rows, cols):
+    """A markdown table: of the tickets in each queue, what percent have each priority?"""
+    table = (pd.crosstab(rows, cols, normalize="index") * 100).round(1)
+
+    header_cells = [rows.name]
+    for column in table.columns:
+        header_cells.append(str(column))
+
+    lines = []
+    lines.append("| " + " | ".join(header_cells) + " |")
+    lines.append("|---" * (len(table.columns) + 1) + "|")
+    for index, values in table.iterrows():
+        cells = [str(index)]
+        for value in values:
+            cells.append(f"{value:.1f}")
+        lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
 
 
-def download_and_profile() -> None:
-    # 1. Download. The first run fetches the files into HF_HOME; later runs use the cache.
+def collect_tags(row):
+    """Put the tags of one ticket (tag_1 ... tag_8) into one list, leaving out the empty ones."""
+    tags = []
+    for tag in row:
+        if isinstance(tag, str) and tag:
+            tags.append(tag)
+    return tags
+
+
+def get_count(pair):
+    """Used for sorting (tag, count) pairs by their count."""
+    return pair[1]
+
+
+def download_and_profile():
+    # The datasets package is slow to load, so we only load it when a download is really requested.
+    from datasets import load_dataset
+
+    # Step 1: download. The first run fetches the files into the cache folder; later runs reuse them.
     df = load_dataset(DATASET, split="train").to_pandas()
     log.info("Downloaded %d rows. Columns: %s", len(df), list(df.columns))
 
-    # 2. Keep English only (ADR-007).
+    # Step 2: keep only English (ADR-007).
     df = df[df["language"] == "en"].copy()
     log.info("English rows: %d", len(df))
 
-    # 3. Build the text the model will actually see: subject + body.
+    # Step 3: build the text the model will actually see: the subject and the body.
     df["subject"] = df["subject"].fillna("").str.strip()
     df["body"] = df["body"].fillna("").str.strip()
     df = df[df["body"].str.len() >= MIN_BODY_CHARS]
     df["text"] = (df["subject"] + "\n\n" + df["body"]).str.strip()
 
-    # 4. Stable ids + exact-duplicate removal.
+    # Step 4: give every ticket a stable id, and remove exact duplicates.
     df["id"] = df["text"].map(make_id)
     n_before = len(df)
     df = df.drop_duplicates(subset="id")
     n_dupes = n_before - len(df)
     log.info("Removed %d exact duplicates -> %d tickets", n_dupes, len(df))
 
-    # 5. Collapse tag_1..tag_8 into one list, dropping empties.
-    tag_cols = [c for c in df.columns if c.startswith("tag_")]
-    df["tags"] = df[tag_cols].apply(lambda r: [t for t in r if isinstance(t, str) and t], axis=1)
+    # Step 5: put the columns tag_1 ... tag_8 into one list per ticket.
+    tag_columns = []
+    for column in df.columns:
+        if column.startswith("tag_"):
+            tag_columns.append(column)
+    df["tags"] = df[tag_columns].apply(collect_tags, axis=1)
 
-    # 6. Save the cleaned raw file.
+    # Step 6: save the cleaned file.
     keep = ["id", "text", "subject", "body", "answer", "queue", "priority", "type", "tags", "version"]
     paths.RAW_TICKETS.parent.mkdir(parents=True, exist_ok=True)
     df[keep].to_json(paths.RAW_TICKETS, orient="records", lines=True, force_ascii=False)
     log.info("Wrote %s", paths.RAW_TICKETS)
 
-    # 7. Profile -> markdown report.
+    # Step 7: write a profile of the data as a markdown report.
     lengths = df["text"].str.len()
-    approx_tokens = (lengths / 4).round()  # ~4 characters per token for English
-    tag_counts = Counter(tag for tags in df["tags"] for tag in tags).most_common(25)
-    report = [
-        f"# Dataset profile: {DATASET} (English)",
-        "",
-        "_Generated by `triage data download`. Do not edit by hand; re-run the command._",
-        "",
-        f"- Rows after filtering: **{len(df):,}** (exact duplicates removed: {n_dupes:,})",
-        f"- Text length (chars): p50 {lengths.median():.0f}, p90 {lengths.quantile(0.9):.0f}, "
-        f"max {lengths.max():.0f}",
-        f"- Approx tokens per ticket: p50 {approx_tokens.median():.0f}, "
-        f"p90 {approx_tokens.quantile(0.9):.0f}",
-        "",
-        counts_table(df["queue"], "queue (candidate for `category`)"),
-        counts_table(df["priority"], "priority"),
-        counts_table(df["type"], "type"),
-        counts_table(df["version"].astype("string"), "version (dataset release)"),
-        "### Top 25 tags",
-        "",
-        "| tag | count |",
-        "|---|---|",
-        *[f"| {tag} | {n} |" for tag, n in tag_counts],
-        "",
-        "### queue x priority (row %)",
-        "",
-        crosstab_table(df["queue"], df["priority"]),
-    ]
+    approx_tokens = (lengths / 4).round()  # about 4 characters per token in English
+
+    # Count how often each tag appears, then keep the 25 most common.
+    tag_counts = {}
+    for tags in df["tags"]:
+        for tag in tags:
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    top_tags = sorted(tag_counts.items(), key=get_count, reverse=True)[:25]
+
+    report = []
+    report.append(f"# Dataset profile: {DATASET} (English)")
+    report.append("")
+    report.append("_Generated by `triage data download`. Do not edit by hand; re-run the command._")
+    report.append("")
+    report.append(f"- Rows after filtering: **{len(df):,}** (exact duplicates removed: {n_dupes:,})")
+    report.append(
+        f"- Text length (chars): p50 {lengths.median():.0f}, p90 {lengths.quantile(0.9):.0f}, max {lengths.max():.0f}"
+    )
+    report.append(
+        f"- Approx tokens per ticket: p50 {approx_tokens.median():.0f}, p90 {approx_tokens.quantile(0.9):.0f}"
+    )
+    report.append("")
+    report.append(counts_table(df["queue"], "queue (candidate for `category`)"))
+    report.append(counts_table(df["priority"], "priority"))
+    report.append(counts_table(df["type"], "type"))
+    report.append(counts_table(df["version"].astype("string"), "version (dataset release)"))
+    report.append("### Top 25 tags")
+    report.append("")
+    report.append("| tag | count |")
+    report.append("|---|---|")
+    for tag, n in top_tags:
+        report.append(f"| {tag} | {n} |")
+    report.append("")
+    report.append("### queue x priority (row %)")
+    report.append("")
+    report.append(crosstab_table(df["queue"], df["priority"]))
+
     report_file = paths.DOC_REPORTS / "dataset-profile.md"
     report_file.parent.mkdir(parents=True, exist_ok=True)
     report_file.write_text("\n".join(report), encoding="utf-8")
     log.info("Wrote %s", report_file)
 
-    # 8. Print random examples to read in the terminal. Reading raw data is the most
-    #    underrated step in ML: you will spot label noise here before any metric shows it.
+    # Step 8: print random examples to read. Reading raw data is the most underrated step in ML:
+    # you will spot wrong labels here before any metric shows them.
     log.info("10 RANDOM TICKETS: do the labels look right to you?")
     for _, row in df.sample(10, random_state=SEED).iterrows():
-        text = row["text"][:500] + ("..." if len(row["text"]) > 500 else "")
+        text = row["text"][:500]
+        if len(row["text"]) > 500:
+            text = text + "..."
         log.info(
             "[%s] queue=%s | priority=%s | type=%s\n%s",
             row["id"],

@@ -1,30 +1,27 @@
 """Find extra tickets that probably belong to the rare categories (hr, customer_service).
 
-Why: the teacher found only ~1% hr and ~2% customer_service in the first 1,000 training tickets.
+Why: the teacher found only about 1% hr and 2% customer_service in the first 1,000 training tickets.
 That is too few for the small model to learn from, so we search the unused tickets for more.
 
-How: every unused ticket gets a score per category = how many of that category's keywords it
-contains, and we keep the highest scorers. This only PICKS tickets to label. The teacher still
-decides the real category, and many picked tickets turn out to be something else.
+How: every unused ticket gets a score for each category: how many of that category's keywords it
+contains. We keep the highest scorers. This only PICKS tickets to label. The teacher still decides
+the real category, and many picked tickets turn out to be something else.
 
-Two rounds exist. Round 1 is already done: running it again would skip everything it picked.
+There are two rounds. Round 1 is already done: running it again would skip everything it picked.
   Round 1: broad lists for hr and customer_service -> train_extra.jsonl
-  Round 2: strict hr list built from the 34 confirmed hr tickets -> train_extra2.jsonl
+  Round 2: a strict hr list built from the 34 confirmed hr tickets -> train_extra2.jsonl
 
 Never touched: test.jsonl and val.jsonl (those stay natural and frozen).
 """
 
 import logging
 import random
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
 
 from triage import paths
 from triage.data.keywords import BROAD_KEYWORDS, STRICT_HR_KEYWORDS
 from triage.dataset_map import QUEUE_TO_CATEGORY
 from triage.errors import UserError
-from triage.io import Row, read_jsonl, write_jsonl
+from triage.io import read_jsonl, write_jsonl
 from triage.textclean import clean_text, normalise
 
 log = logging.getLogger(__name__)
@@ -32,11 +29,13 @@ log = logging.getLogger(__name__)
 SEED = 42
 
 
-@dataclass
 class MiningRound:
-    keywords: dict[str, dict[str, list[str]]]
-    how_many: dict[str, int]  # candidates to pick per category
-    out_name: str
+    """The settings of one mining round."""
+
+    def __init__(self, keywords, how_many, out_name):
+        self.keywords = keywords  # category -> its keyword lists
+        self.how_many = how_many  # category -> how many tickets to pick
+        self.out_name = out_name  # the file the picked tickets are saved to
 
 
 ROUNDS = {
@@ -45,8 +44,11 @@ ROUNDS = {
 }
 
 
-def split_into_words(text: str) -> list[str]:
-    """'Hello, World!' becomes ['hello', 'world']. Letters and digits stay, the rest is a gap."""
+def split_into_words(text):
+    """Cut a text into lower-case words. 'Hello, World!' becomes ['hello', 'world'].
+
+    Letters and digits stay. Everything else is treated as a gap between words.
+    """
     lower_text = text.lower()
     cleaned = ""
     for character in lower_text:
@@ -57,8 +59,12 @@ def split_into_words(text: str) -> list[str]:
     return cleaned.split()
 
 
-def keyword_score(lower_text: str, ticket_words: list[str], keywords: dict[str, list[str]]) -> int:
-    """How many different keywords from the list does this ticket contain?"""
+def keyword_score(lower_text, ticket_words, keywords):
+    """How many different keywords from the list does this ticket contain?
+
+    A single word must match a WHOLE word ("hr" must not match "three").
+    A phrase only has to appear somewhere in the text.
+    """
     score = 0
     for word in keywords["words"]:
         if word in ticket_words:
@@ -69,13 +75,13 @@ def keyword_score(lower_text: str, ticket_words: list[str], keywords: dict[str, 
     return score
 
 
-def get_score(match: dict[str, Any]) -> int:
-    """Used for sorting: the sort looks at this number for each match."""
+def get_score(match):
+    """Used by the sort below: it sorts the matches by this number."""
     return match["score"]
 
 
-def used_ticket_ids() -> set[str]:
-    """Test and val are off limits for ever; every training ticket we already paid to label is done."""
+def used_ticket_ids():
+    """Ids of tickets we may not pick: test and validation (off limits for ever) and everything already labelled."""
     files = [
         paths.PROCESSED / "test.jsonl",
         paths.PROCESSED / "val.jsonl",
@@ -90,8 +96,8 @@ def used_ticket_ids() -> set[str]:
     return ids
 
 
-def used_ticket_texts(used_ids: set[str]) -> set[str]:
-    """Normalised texts of used tickets, so near-copies of them are skipped too."""
+def used_ticket_texts(used_ids):
+    """The cleaned-up texts of used tickets, so near-copies of them are skipped too."""
     texts = set()
     for name in ["test.jsonl", "val.jsonl", "train.jsonl", "train_extra.jsonl"]:
         path = paths.PROCESSED / name
@@ -102,19 +108,19 @@ def used_ticket_texts(used_ids: set[str]) -> set[str]:
     return texts
 
 
-def mine_rare_classes(round_number: int, out_dir: Path = paths.PROCESSED) -> list[Row]:
-    """Run one mining round, write its file, and return the picked tickets."""
+def mine_rare_classes(round_number, out_dir=paths.PROCESSED):
+    """Run one mining round, save the picked tickets, and return them."""
     if round_number not in ROUNDS:
         raise UserError(f"Unknown round {round_number}. Choose from {sorted(ROUNDS)}.")
     config = ROUNDS[round_number]
     out_file = out_dir / config.out_name
 
-    # 1. What is already used?
+    # Step 1: which tickets are already used?
     used_ids = used_ticket_ids()
     used_texts = used_ticket_texts(used_ids)
     log.info("Already used: %d tickets", len(used_ids))
 
-    # 2. Score every unused ticket for each category we are mining.
+    # Step 2: give every unused ticket a score for each category we are mining.
     candidates = []
     seen_texts = set()
     for ticket in read_jsonl(paths.RAW_TICKETS):
@@ -131,24 +137,23 @@ def mine_rare_classes(round_number: int, out_dir: Path = paths.PROCESSED) -> lis
         scores = {}
         for category in config.keywords:
             scores[category] = keyword_score(lower_text, ticket_words, config.keywords[category])
-        candidates.append(
-            {
-                "id": ticket["id"],
-                "text": text,
-                "dataset_category": QUEUE_TO_CATEGORY[ticket["queue"]].value,
-                "dataset_priority": ticket["priority"],
-                "queue": ticket["queue"],
-                "version": ticket["version"],
-                "scores": scores,
-            }
-        )
+
+        candidate = {}
+        candidate["id"] = ticket["id"]
+        candidate["text"] = text
+        candidate["dataset_category"] = QUEUE_TO_CATEGORY[ticket["queue"]].value
+        candidate["dataset_priority"] = ticket["priority"]
+        candidate["queue"] = ticket["queue"]
+        candidate["version"] = ticket["version"]
+        candidate["scores"] = scores
+        candidates.append(candidate)
     log.info("Unused tickets to search: %d", len(candidates))
 
-    # 3. For each category: keep tickets with at least one hit, best scores first.
+    # Step 3: for each category, keep the tickets with at least one keyword, best scores first.
     random.seed(SEED)
     picked_ids = set()
     picked = []
-    for category in config.keywords:  # hr comes first: it is the rarest
+    for category in config.keywords:  # hr comes first because it is the rarest
         matches = []
         for ticket in candidates:
             if ticket["id"] in picked_ids:
@@ -157,8 +162,8 @@ def mine_rare_classes(round_number: int, out_dir: Path = paths.PROCESSED) -> lis
             if score >= 1:
                 matches.append({"ticket": ticket, "score": score})
 
-        random.shuffle(matches)  # so ties are broken randomly, not by file order
-        matches.sort(key=get_score, reverse=True)  # stable sort: ties keep the random order
+        random.shuffle(matches)  # so that ties are broken randomly, not by the order of the file
+        matches.sort(key=get_score, reverse=True)  # a stable sort: tickets with equal scores keep the random order
 
         log.info("%s: %d tickets contain at least one keyword", category, len(matches))
         for wanted_score in [5, 4, 3, 2, 1]:
@@ -169,23 +174,22 @@ def mine_rare_classes(round_number: int, out_dir: Path = paths.PROCESSED) -> lis
             log.info("  with %d keyword hit(s): %d", wanted_score, how_many)
 
         limit = config.how_many[category]
-        for match in matches[:limit]:
+        for match in matches[:limit]:  # [:limit] means "the first `limit` matches"
             ticket = match["ticket"]
             picked_ids.add(ticket["id"])
-            picked.append(
-                {
-                    "id": ticket["id"],
-                    "text": ticket["text"],
-                    "dataset_category": ticket["dataset_category"],
-                    "dataset_priority": ticket["dataset_priority"],
-                    "queue": ticket["queue"],
-                    "version": ticket["version"],
-                    "mined_for": category,
-                }
-            )
+
+            row = {}
+            row["id"] = ticket["id"]
+            row["text"] = ticket["text"]
+            row["dataset_category"] = ticket["dataset_category"]
+            row["dataset_priority"] = ticket["dataset_priority"]
+            row["queue"] = ticket["queue"]
+            row["version"] = ticket["version"]
+            row["mined_for"] = category
+            picked.append(row)
         log.info("  picked %d", min(limit, len(matches)))
 
-    # 4. Shuffle so the categories are mixed, then save.
+    # Step 4: mix the categories together, then save.
     random.shuffle(picked)
     write_jsonl(out_file, picked)
     log.info("Wrote %d tickets -> %s", len(picked), out_file)

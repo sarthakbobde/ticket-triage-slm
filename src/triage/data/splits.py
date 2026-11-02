@@ -1,11 +1,11 @@
-"""Clean, near-dedupe and split the tickets BEFORE labelling (ADR-012).
+"""Clean, remove near-duplicates and split the tickets BEFORE labelling (ADR-012).
 
 Why before labelling: the splits decide which ~3,300 tickets we pay the teacher to label.
 
-Outputs (unlabelled; the teacher fills in labels in triage.labeling.teacher)
-- data/processed/test.jsonl     500, natural distribution, 200 flagged `gold` (FROZEN)
-- data/processed/val.jsonl      300, natural distribution
-- data/processed/train.jsonl    ~2,500, capped per category
+Outputs (unlabelled; the teacher adds the labels in triage.labeling.teacher)
+- data/processed/test.jsonl     500 tickets, natural mix of categories, 200 flagged `gold` (FROZEN)
+- data/processed/val.jsonl      300 tickets, natural mix of categories
+- data/processed/train.jsonl    about 2,500 tickets, at most `cap` per category
 - docs/reports/splits.md        counts per split and category (commit this)
 
 WARNING: dataset_map.py now maps Human Resources to customer_service (ADR-013), so running this
@@ -14,7 +14,6 @@ function refuses to overwrite it unless force=True.
 """
 
 import logging
-from pathlib import Path
 
 import pandas as pd
 
@@ -27,55 +26,92 @@ log = logging.getLogger(__name__)
 
 SEED = 42
 N_TEST = 500
-N_GOLD = 200  # subset of test, hand-labelled
+N_GOLD = 200  # a part of the test set, labelled by hand
 N_VAL = 300
-TRAIN_TARGET = 2500  # the per-category cap is derived from this (see capped_sample)
+TRAIN_TARGET = 2500  # the cap per category is worked out from this (see capped_sample)
 
 
-def stratified_sample(df: pd.DataFrame, n: int, by: str) -> pd.DataFrame:
-    """n rows keeping each group's share. Largest-remainder rounding so the total is exactly n."""
-    exact = df[by].value_counts(normalize=True) * n
-    quota = exact.astype(int)
-    quota[(exact - quota).sort_values(ascending=False).index[: n - quota.sum()]] += 1
-    parts = [df[df[by] == g].sample(q, random_state=SEED) for g, q in quota.items() if q]
+def stratified_sample(df, n, by):
+    """Pick exactly n rows, keeping every group's share of the whole.
+
+    "Stratified" means each category keeps its natural share. We round every group's quota down,
+    then give the missing rows to the groups with the biggest leftover (largest-remainder rounding),
+    so the total is exactly n.
+    """
+    exact = df[by].value_counts(normalize=True) * n  # the exact (fractional) quota per group
+    quota = exact.astype(int)  # rounded down
+
+    # How many rows are still missing after rounding down, and which groups had the biggest leftover?
+    leftovers = exact - quota
+    biggest_first = leftovers.sort_values(ascending=False)
+    missing = n - quota.sum()
+    groups_that_get_one_more = biggest_first.index[:missing]  # [:missing] = the first `missing` groups
+    for group in groups_that_get_one_more:
+        quota[group] = quota[group] + 1
+
+    # Take a random sample of that size from every group.
+    parts = []
+    for group, how_many in quota.items():
+        if how_many > 0:
+            rows_of_group = df[df[by] == group]
+            parts.append(rows_of_group.sample(how_many, random_state=SEED))
     return pd.concat(parts)
 
 
-def capped_sample(df: pd.DataFrame, total: int, by: str) -> tuple[pd.DataFrame, int]:
-    """Take up to `cap` rows per group, with the cap chosen so the total is ~`total`.
+def capped_sample(df, total, by):
+    """Take at most `cap` rows per group, where the cap is chosen so the total is about `total`.
 
-    Small groups are taken whole; the leftover budget is shared by the large ones
-    ("water-filling"). Rare classes end up over-represented relative to reality, not wildly.
+    Small groups are taken whole. What is left of the budget is shared by the larger groups
+    ("water-filling"). So rare categories end up over-represented compared with reality, but not wildly.
+    Returns (the sampled rows, the cap that was used).
     """
-    sizes = df[by].value_counts().sort_values()
-    budget, groups_left = total, len(sizes)
-    cap = budget // groups_left
+    sizes = df[by].value_counts().sort_values()  # smallest group first
+    budget = total
+    groups_left = len(sizes)
+    cap = budget // groups_left  # // is whole-number division
     for size in sizes:
         cap = budget // groups_left
         if size >= cap:
-            break
-        budget -= size
-        groups_left -= 1
-    parts = [g.sample(min(len(g), cap), random_state=SEED) for _, g in df.groupby(by)]
+            break  # this group (and every bigger one) is capped
+        budget = budget - size  # this small group is taken whole, so it uses `size` of the budget
+        groups_left = groups_left - 1
+
+    parts = []
+    for group_name, rows_of_group in df.groupby(by):
+        how_many = min(len(rows_of_group), cap)
+        parts.append(rows_of_group.sample(how_many, random_state=SEED))
     return pd.concat(parts), cap
 
 
-def counts_table(splits: dict[str, pd.DataFrame]) -> str:
-    """Markdown table: tickets per category in each split."""
-    ct = pd.DataFrame({name: s["category"].value_counts() for name, s in splits.items()}).fillna(0)
-    ct = ct.astype(int).sort_values("test", ascending=False)
-    lines = ["| category | " + " | ".join(ct.columns) + " |", "|---" * (len(ct.columns) + 1) + "|"]
-    lines += [f"| {c} | " + " | ".join(str(v) for v in row) + " |" for c, row in ct.iterrows()]
-    lines.append("| **total** | " + " | ".join(str(v) for v in ct.sum()) + " |")
+def counts_table(splits):
+    """A markdown table: how many tickets each category has in each split."""
+    columns = {}
+    for name in splits:
+        columns[name] = splits[name]["category"].value_counts()
+    counts = pd.DataFrame(columns).fillna(0)
+    counts = counts.astype(int).sort_values("test", ascending=False)
+
+    lines = []
+    lines.append("| category | " + " | ".join(counts.columns) + " |")
+    lines.append("|---" * (len(counts.columns) + 1) + "|")
+    for category, row in counts.iterrows():
+        cells = []
+        for value in row:
+            cells.append(str(value))
+        lines.append(f"| {category} | " + " | ".join(cells) + " |")
+
+    totals = []
+    for value in counts.sum():
+        totals.append(str(value))
+    lines.append("| **total** | " + " | ".join(totals) + " |")
     return "\n".join(lines)
 
 
-def build_splits(
-    raw_file: Path = paths.RAW_TICKETS,
-    out_dir: Path = paths.PROCESSED,
-    report_file: Path = paths.DOC_REPORTS / "splits.md",
-    force: bool = False,
-) -> None:
+def build_splits(raw_file=paths.RAW_TICKETS, out_dir=paths.PROCESSED, report_file=None, force=False):
+    """Build and save the test, validation and training splits."""
+    if report_file is None:
+        report_file = paths.DOC_REPORTS / "splits.md"
+
     test_path = out_dir / "test.jsonl"
     if test_path.exists() and not force:
         raise UserError(
@@ -85,51 +121,66 @@ def build_splits(
 
     df = pd.read_json(raw_file, lines=True)
     df["text"] = df["text"].map(clean_text)
-    df["category"] = df["queue"].map({q: c.value for q, c in QUEUE_TO_CATEGORY.items()})
+
+    # The dataset's queue, translated to our category name. Only used to keep the mix balanced.
+    queue_to_category = {}
+    for queue in QUEUE_TO_CATEGORY:
+        queue_to_category[queue] = QUEUE_TO_CATEGORY[queue].value
+    df["category"] = df["queue"].map(queue_to_category)
     log.info("Loaded %d tickets", len(df))
 
-    # 1. Near-duplicates go BEFORE any split, so copies can't straddle train and test.
+    # Step 1: remove near-duplicates BEFORE splitting, so a copy cannot end up in train while its
+    # twin is in test.
     n_before = len(df)
-    df = df[~df["text"].map(normalise).duplicated()]
+    cleaned_texts = df["text"].map(normalise)
+    is_repeat = cleaned_texts.duplicated()  # True for every copy after the first one
+    df = df[~is_repeat]  # ~ means "not": keep only the rows that are not repeats
     n_near = n_before - len(df)
     log.info("Removed %d near-duplicates -> %d", n_near, len(df))
 
-    # 2. Test first, natural distribution. 3. Val, natural. 4. Train from the rest, capped.
+    # Step 2: the test set first, with the natural mix. Step 3: validation, natural mix.
+    # Step 4: training from what is left, with at most `cap` per category.
     test = stratified_sample(df, N_TEST, "category")
     rest = df.drop(test.index)
     val = stratified_sample(rest, N_VAL, "category")
     rest = rest.drop(val.index)
     train, cap = capped_sample(rest, TRAIN_TARGET, "category")
 
-    # 5. Gold set: a stratified subset of test, labelled by hand before seeing the teacher's.
-    gold_ids = set(stratified_sample(test, N_GOLD, "category")["id"])
+    # Step 5: the gold set is a part of the test set, labelled by hand before seeing the teacher's labels.
+    gold_sample = stratified_sample(test, N_GOLD, "category")
+    gold_ids = set(gold_sample["id"])
     test["gold"] = test["id"].isin(gold_ids)
 
+    # Save the three splits.
     keep = ["id", "text", "category", "priority", "queue", "version"]
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name, split in {"test": test, "val": val, "train": train}.items():
-        cols = keep + (["gold"] if name == "test" else [])
-        out = split[cols].rename(columns={"category": "dataset_category", "priority": "dataset_priority"})
-        out.sample(frac=1, random_state=SEED).to_json(
-            out_dir / f"{name}.jsonl", orient="records", lines=True, force_ascii=False
-        )
+    split_frames = {"test": test, "val": val, "train": train}
+    for name in ["test", "val", "train"]:
+        split = split_frames[name]
+        columns = list(keep)
+        if name == "test":
+            columns.append("gold")
+        renamed = split[columns].rename(columns={"category": "dataset_category", "priority": "dataset_priority"})
+        shuffled = renamed.sample(frac=1, random_state=SEED)  # frac=1 means "all rows, in random order"
+        shuffled.to_json(out_dir / f"{name}.jsonl", orient="records", lines=True, force_ascii=False)
         log.info("Wrote %s: %d", name, len(split))
 
-    splits = {"test": test, "gold": test[test["gold"]], "val": val, "train": train}
-    report = [
-        "# Splits",
-        "",
-        "_Generated by `triage data splits` (ADR-012). Do not edit by hand._",
-        "",
-        f"- Tickets after near-duplicate removal: **{len(df):,}** ({n_near} removed)",
-        f"- Train cap per category: **{cap}** (derived from a target of {TRAIN_TARGET:,})",
-        f"- Tickets to label with the teacher: **{len(test) + len(val) + len(train):,}**",
-        "- Categories are the dataset's queues mapped by `src/triage/dataset_map.py`: used only",
-        "  to stratify; the teacher's labels are the real targets.",
-        "",
-        counts_table(splits),
-        "",
-    ]
+    # Write the report.
+    gold_rows = test[test["gold"]]
+    splits = {"test": test, "gold": gold_rows, "val": val, "train": train}
+    report = []
+    report.append("# Splits")
+    report.append("")
+    report.append("_Generated by `triage data splits` (ADR-012). Do not edit by hand._")
+    report.append("")
+    report.append(f"- Tickets after near-duplicate removal: **{len(df):,}** ({n_near} removed)")
+    report.append(f"- Train cap per category: **{cap}** (derived from a target of {TRAIN_TARGET:,})")
+    report.append(f"- Tickets to label with the teacher: **{len(test) + len(val) + len(train):,}**")
+    report.append("- Categories are the dataset's queues mapped by `src/triage/dataset_map.py`: used only")
+    report.append("  to stratify; the teacher's labels are the real targets.")
+    report.append("")
+    report.append(counts_table(splits))
+    report.append("")
     report_file.parent.mkdir(parents=True, exist_ok=True)
     report_file.write_text("\n".join(report), encoding="utf-8")
     log.info("Wrote %s", report_file)
