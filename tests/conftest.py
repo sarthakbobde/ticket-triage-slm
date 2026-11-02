@@ -41,9 +41,16 @@ class FakeClient:
         self.calls += 1
         if isinstance(answer, Exception):
             raise answer
+        tokens = None
+        if isinstance(answer, tuple):  # (text, [(token, logprob), ...])
+            answer, tokens = answer
         message = SimpleNamespace(content=answer)
+        logprobs = None
+        if tokens is not None:
+            items = [SimpleNamespace(token=text, logprob=logprob) for text, logprob in tokens]
+            logprobs = SimpleNamespace(content=items)
         return SimpleNamespace(
-            choices=[SimpleNamespace(message=message)],
+            choices=[SimpleNamespace(message=message, logprobs=logprobs)],
             usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5),
         )
 
@@ -51,3 +58,31 @@ class FakeClient:
 @pytest.fixture
 def fake_client_factory():
     return FakeClient
+
+
+def tokens_for(content: str, confidence: dict[str, float] | None = None) -> list[tuple[str, float]]:
+    """Cut an answer into (token, log-probability) pairs the way a model would report them.
+
+    Each decision value (category, priority, sentiment) becomes its own token. Its probability comes
+    from `confidence` (default 1.0); every other token is certain (probability 1).
+    """
+    import math
+    import re
+
+    confidence = confidence or {}
+    pieces = []
+    cursor = 0
+    for field in ("category", "priority", "sentiment"):
+        match = re.search(rf'"{field}"\s*:\s*"([^"]*)"', content)
+        start, end = match.start(1), match.end(1)
+        pieces.append((start, end, confidence.get(field, 1.0)))
+    pieces.sort()
+    tokens = []
+    for start, end, probability in pieces:
+        if start > cursor:
+            tokens.append((content[cursor:start], 0.0))
+        tokens.append((content[start:end], math.log(probability)))
+        cursor = end
+    if cursor < len(content):
+        tokens.append((content[cursor:], 0.0))
+    return tokens

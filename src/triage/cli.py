@@ -115,6 +115,31 @@ def cmd_export_ollama(args: argparse.Namespace) -> None:
     create_ollama_model(Path(args.gguf), args.name)
 
 
+def cmd_serve(args: argparse.Namespace) -> None:
+    import uvicorn
+
+    from triage.gateway.app import create_app
+    from triage.gateway.service import build_service
+
+    service = build_service(
+        student_config=args.student,
+        use_teacher=args.teacher,
+        approved=args.yes,
+        teacher_budget=args.teacher_budget,
+        min_confidence=args.min_confidence,
+    )
+    uvicorn.run(create_app(service), host=args.host, port=args.port, log_level="warning")
+
+
+def cmd_eval_calibrate(args: argparse.Namespace) -> None:
+    from triage.gateway.calibrate import analyse, collect_student_answers
+
+    if not args.analyse_only:
+        collect_student_answers(args.student, args.run)
+    lines = analyse(args.run, args.teacher_run)
+    print("\n".join(lines))
+
+
 # ---- the parser: which words and options exist -----------------------------------------------
 
 
@@ -175,6 +200,23 @@ def build_parser() -> argparse.ArgumentParser:
     score.add_argument("--run", required=True)
     score.set_defaults(handler=cmd_eval_score)
 
+    # triage serve
+    serve = commands.add_parser("serve", help="run the HTTP gateway (student first, teacher as fallback)")
+    serve.add_argument(
+        "--student", default="student_q4", help="section of configs/models.yaml for the small model"
+    )
+    serve.add_argument(
+        "--min-confidence", type=float, default=0.0, help="answers less sure than this go to the teacher"
+    )
+    serve.add_argument("--teacher", action="store_true", help="allow falling back to the paid teacher model")
+    serve.add_argument(
+        "--teacher-budget", type=int, default=0, help="the most paid teacher calls allowed this run"
+    )
+    serve.add_argument("--yes", action="store_true", help="confirm that paid teacher calls are allowed")
+    serve.add_argument("--host", default="127.0.0.1", help="127.0.0.1 = this machine only")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.set_defaults(handler=cmd_serve)
+
     # triage export ...
     export = commands.add_parser("export", help="merge the adapter and import into Ollama").add_subparsers(
         dest="action", required=True
@@ -191,6 +233,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ollama_cmd.add_argument("--name", required=True, help="Ollama model name, e.g. ticket-triage-q4")
     ollama_cmd.set_defaults(handler=cmd_export_ollama)
+
+    calibrate = evaluate.add_parser(
+        "calibrate", help="choose the gateway confidence threshold (student runs locally)"
+    )
+    calibrate.add_argument("--student", default="student_q4", help="section of configs/models.yaml")
+    calibrate.add_argument("--run", default="gateway-student-q4", help="name for the student answers file")
+    calibrate.add_argument(
+        "--teacher-run", default="teacher-gpt-4.1", help="an existing teacher run to reuse (free)"
+    )
+    calibrate.add_argument(
+        "--analyse-only", action="store_true", help="skip asking the student, use the saved file"
+    )
+    calibrate.set_defaults(handler=cmd_eval_calibrate)
 
     return parser
 
