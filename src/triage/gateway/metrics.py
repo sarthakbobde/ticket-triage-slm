@@ -1,58 +1,82 @@
 """Counters the gateway keeps about itself, shown at GET /metrics.
 
-Everything lives in memory and resets when the server restarts. That is enough to answer the
-questions Step 12 asks: how often did we fall back to the teacher, how fast were we, and how much
+Everything lives in memory and starts again from zero when the server restarts. That is enough to
+answer the questions Step 12 asks: how often did we need the teacher, how fast were we, and how much
 money did the small model save?
 """
 
 import threading
-from collections import Counter, deque
-from typing import Any
 
 from triage.evals.metrics import percentile
 
 
 class GatewayMetrics:
-    def __init__(self, teacher_cost_per_ticket: float, window: int = 1000):
-        # What one teacher call costs. Measured in Step 08: about 625 tokens in and 95 out per
-        # ticket, which is $0.002 at the assumed gpt-4.1 prices (unverified).
+    def __init__(self, teacher_cost_per_ticket, window=1000):
+        # What one teacher call costs. We measured this in Step 08: about 625 tokens in and 95 out per
+        # ticket, which is about $0.002 at the assumed gpt-4.1 prices (not yet checked against the bill).
         self.teacher_cost_per_ticket = teacher_cost_per_ticket
-        self._lock = threading.Lock()
-        self._answered = Counter()  # by source: "student" / "teacher"
-        self._fallback_reasons = Counter()
-        self._failures = 0
-        self._latencies = {"student": deque(maxlen=window), "teacher": deque(maxlen=window)}
 
-    def record_answer(self, source: str, latency_ms: int, fallback_reason: str | None) -> None:
-        with self._lock:
-            self._answered[source] += 1
-            self._latencies[source].append(latency_ms)
-            if fallback_reason:
-                self._fallback_reasons[fallback_reason] += 1
+        # Only the most recent `window` response times are kept, so memory does not grow forever.
+        self.window = window
 
-    def record_failure(self) -> None:
-        with self._lock:
-            self._failures += 1
+        # Several requests can arrive at the same moment. The lock makes them take turns when they
+        # update the numbers, so two requests cannot overwrite each other's changes.
+        self.lock = threading.Lock()
 
-    def snapshot(self) -> dict[str, Any]:
-        with self._lock:
-            student = self._answered["student"]
-            teacher = self._answered["teacher"]
-            answered = student + teacher
-            everything = list(self._latencies["student"]) + list(self._latencies["teacher"])
-            return {
-                "requests_answered": answered,
-                "requests_failed": self._failures,
-                "answered_by_student": student,
-                "answered_by_teacher": teacher,
-                "fallback_rate": (teacher / answered) if answered else None,
-                "fallback_reasons": dict(self._fallback_reasons),
-                "latency_ms": {
-                    "p50": percentile(everything, 50),
-                    "p95": percentile(everything, 95),
-                    "student_p50": percentile(list(self._latencies["student"]), 50),
-                    "teacher_p50": percentile(list(self._latencies["teacher"]), 50),
-                },
-                # Tickets the small model answered are tickets we did not pay the teacher for.
-                "estimated_cost_saved_usd": round(student * self.teacher_cost_per_ticket, 4),
-            }
+        self.student_count = 0
+        self.teacher_count = 0
+        self.failure_count = 0
+        self.fallback_reasons = {}  # reason -> how many times it happened
+        self.student_latencies = []
+        self.teacher_latencies = []
+
+    def record_answer(self, source, latency_ms, fallback_reason):
+        """Remember one successful answer."""
+        with self.lock:
+            if source == "student":
+                self.student_count = self.student_count + 1
+                self.student_latencies.append(latency_ms)
+                self.student_latencies = self.student_latencies[-self.window :]  # keep the last `window`
+            else:
+                self.teacher_count = self.teacher_count + 1
+                self.teacher_latencies.append(latency_ms)
+                self.teacher_latencies = self.teacher_latencies[-self.window :]
+
+            if fallback_reason is not None:
+                times_before = self.fallback_reasons.get(fallback_reason, 0)
+                self.fallback_reasons[fallback_reason] = times_before + 1
+
+    def record_failure(self):
+        """Remember one request that got no usable answer."""
+        with self.lock:
+            self.failure_count = self.failure_count + 1
+
+    def snapshot(self):
+        """A copy of all the numbers, as a dictionary ready to be sent as JSON."""
+        with self.lock:
+            answered = self.student_count + self.teacher_count
+
+            # Share of answers that needed the teacher. None if there were no answers yet.
+            fallback_rate = None
+            if answered > 0:
+                fallback_rate = self.teacher_count / answered
+
+            all_latencies = self.student_latencies + self.teacher_latencies
+
+            latency = {}
+            latency["p50"] = percentile(all_latencies, 50)  # half of the requests were faster than this
+            latency["p95"] = percentile(all_latencies, 95)  # 95 out of 100 were faster than this
+            latency["student_p50"] = percentile(self.student_latencies, 50)
+            latency["teacher_p50"] = percentile(self.teacher_latencies, 50)
+
+            data = {}
+            data["requests_answered"] = answered
+            data["requests_failed"] = self.failure_count
+            data["answered_by_student"] = self.student_count
+            data["answered_by_teacher"] = self.teacher_count
+            data["fallback_rate"] = fallback_rate
+            data["fallback_reasons"] = dict(self.fallback_reasons)
+            data["latency_ms"] = latency
+            # Every ticket the small model answered is a ticket we did not pay the teacher for.
+            data["estimated_cost_saved_usd"] = round(self.student_count * self.teacher_cost_per_ticket, 4)
+            return data

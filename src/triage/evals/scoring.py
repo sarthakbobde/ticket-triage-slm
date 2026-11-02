@@ -24,9 +24,7 @@ def percent(number: float) -> str:
     return f"{100 * number:.1f}%"
 
 
-def field_report(
-    classes: list[str], true_values: list[str], predicted_values: list[str | None]
-) -> dict[str, Any]:
+def field_report(classes: list[str], true_values: list[str], predicted_values: list[str | None]) -> dict[str, Any]:
     """Numbers for one classification field (category, priority or sentiment)."""
     scores = metrics.class_scores(true_values, predicted_values, classes)
     return {
@@ -42,8 +40,7 @@ def class_table(report: dict[str, Any], classes: list[str]) -> list[str]:
     for name in classes:
         s = report["classes"][name]
         lines.append(
-            f"| {name} | {percent(s['precision'])} | {percent(s['recall'])} | "
-            f"{percent(s['f1'])} | {s['support']} |"
+            f"| {name} | {percent(s['precision'])} | {percent(s['recall'])} | {percent(s['f1'])} | {s['support']} |"
         )
     return lines
 
@@ -156,17 +153,12 @@ def score_run(
         f"| products F1 (per ticket, averaged) | {percent(summary['products_f1'])} |",
     ]
     if summary["reply_promise_rate"] is not None:
-        lines.append(
-            f"| replies that promise refunds or timelines | {percent(summary['reply_promise_rate'])} |"
-        )
+        lines.append(f"| replies that promise refunds or timelines | {percent(summary['reply_promise_rate'])} |")
     if summary["latency_p50_s"] is not None:
-        lines.append(
-            f"| latency p50 / p95 | {summary['latency_p50_s']:.2f}s / {summary['latency_p95_s']:.2f}s |"
-        )
+        lines.append(f"| latency p50 / p95 | {summary['latency_p50_s']:.2f}s / {summary['latency_p95_s']:.2f}s |")
     lines += [
         "",
-        f"Invalid answers: {problems['not_json']} not JSON, "
-        f"{problems['schema']} JSON that breaks the schema.",
+        f"Invalid answers: {problems['not_json']} not JSON, {problems['schema']} JSON that breaks the schema.",
         "",
         "## Category per class",
         "",
@@ -180,8 +172,7 @@ def score_run(
     lines += class_table(sentiment, sentiment_classes)
     lines += [
         "",
-        "Small classes are noisy: with 8 gold billing tickets, "
-        "one mistake moves billing recall by 12 points.",
+        "Small classes are noisy: with 8 gold billing tickets, one mistake moves billing recall by 12 points.",
     ]
 
     reports_dir.mkdir(parents=True, exist_ok=True)

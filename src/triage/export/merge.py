@@ -24,17 +24,13 @@ BASE_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 def merge_adapter(adapter_dir: Path, out_dir: Path, base_model: str = BASE_MODEL) -> Path:
     """Merge the adapter in `adapter_dir` into `base_model` and save the full model to `out_dir`."""
     if not (adapter_dir / "adapter_model.safetensors").exists():
-        raise UserError(
-            f"No adapter_model.safetensors in {adapter_dir}. Unzip the Kaggle adapter there first."
-        )
+        raise UserError(f"No adapter_model.safetensors in {adapter_dir}. Unzip the Kaggle adapter there first.")
     try:
         import torch
         from peft import PeftModel
         from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as error:
-        raise UserError(
-            "Merging needs torch, transformers and peft: uv sync --extra serve --extra export"
-        ) from error
+        raise UserError("Merging needs torch, transformers and peft: uv sync --extra serve --extra export") from error
 
     # The base model's own number format. Merging in the same format avoids rounding surprises.
     log.info("Loading base model %s (about 6 GB, on the CPU)...", base_model)

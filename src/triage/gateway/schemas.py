@@ -1,24 +1,27 @@
-"""The request and response shapes of the HTTP API."""
+"""The shapes of the data going into and out of the HTTP API.
 
-from typing import Literal
+A "schema" like this is a form with named boxes. The web framework checks that incoming data fits
+the form, and turns our Python objects into JSON on the way out.
+"""
 
-from pydantic import BaseModel, Field
+from typing import Optional
+
+from pydantic import BaseModel
 
 from triage.schema import TicketTriage
 
 
 class TriageRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=8000, description="The support ticket, subject and body.")
+    # The support ticket: subject and body as one piece of text.
+    text: str
 
 
 class TriageResponse(BaseModel):
-    request_id: str
-    source: Literal["student", "teacher"] = Field(description="Which model produced the answer.")
-    result: TicketTriage
-    confidence: float | None = Field(
-        description="The student's own certainty, 0 to 1 (None if the server gave no probabilities).",
-    )
-    fallback_reason: str | None = Field(
-        description="Why the teacher was used instead of the student, or None if the student answered.",
-    )
-    latency_ms: int
+    request_id: str  # a short id so one request can be found again in the logs
+    source: str  # "student" or "teacher": which model wrote the answer
+    result: TicketTriage  # the triage answer itself
+    # Optional[float] means "a number, or None". None = the server did not tell us how sure it was.
+    confidence: Optional[float]
+    # Why the teacher was used instead of the student. None = the student answered.
+    fallback_reason: Optional[str]
+    latency_ms: int  # how long this request took, in milliseconds

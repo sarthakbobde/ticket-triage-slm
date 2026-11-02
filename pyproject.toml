@@ -46,12 +46,14 @@ dev = [
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py312"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-# E/W pycodestyle, F pyflakes, I import order, B likely bugs, UP modern syntax
-select = ["E", "W", "F", "I", "B", "UP"]
-# schema.py is the data contract; keep its str+Enum classes as they are (UP042).
-ignore = ["UP042"]
+# E/W style, F real mistakes (unused or missing names), I import order, B likely bugs.
+# Deliberately NOT enabled: UP (pyupgrade). It rewrites plain code into newer, shorter syntax
+# (for example Optional[float] -> float | None), which makes the code harder to read for this project.
+select = ["E", "W", "F", "I", "B"]
+# B007: a loop variable that is not used. Plain loops often unpack a pair and only need one half.
+ignore = ["B007"]

@@ -111,8 +111,7 @@ def build_pilot_report(out_file: Path = paths.DOC_REPORTS / "pilot.md") -> None:
     for number, ticket_id in enumerate(review, 1):
         ticket = tickets[ticket_id]
         lines += [
-            f"### {number}. `{ticket_id}`: dataset says "
-            f"{ticket['dataset_category']} / {ticket['dataset_priority']}",
+            f"### {number}. `{ticket_id}`: dataset says {ticket['dataset_category']} / {ticket['dataset_priority']}",
             "",
             "> " + ticket["text"][:600].replace("\n", "\n> "),
             "",

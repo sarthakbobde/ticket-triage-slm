@@ -36,9 +36,7 @@ class LabelRunResult:
     out_path: Path
 
 
-def label_one(
-    client: OpenAI, endpoint: ModelEndpoint, model: str, text: str
-) -> tuple[TicketTriage, dict[str, Any]]:
+def label_one(client: OpenAI, endpoint: ModelEndpoint, model: str, text: str) -> tuple[TicketTriage, dict[str, Any]]:
     """One ticket -> validated label plus call details. Retries once on invalid JSON, then raises."""
     extra = {}
     if endpoint.reasoning_effort:
@@ -100,9 +98,7 @@ def label_split(
     for ticket in tickets:
         if ticket["id"] not in done:
             todo.append(ticket)
-    log.info(
-        "%s | %s: %d tickets, %d already labelled, %d to go", model, split, len(tickets), len(done), len(todo)
-    )
+    log.info("%s | %s: %d tickets, %d already labelled, %d to go", model, split, len(tickets), len(done), len(todo))
     if not todo:
         return LabelRunResult(0, 0, out_path)
 

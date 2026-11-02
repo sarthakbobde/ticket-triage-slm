@@ -1,56 +1,87 @@
-"""How sure was the student of its answer? (Step 11)
+"""How sure was the small model of its answer? (Step 11)
 
-A language model writes its answer one token (word piece) at a time, and for each token it can tell
-us the probability it gave to the token it chose. For the JSON answer
+A language model writes its answer one small piece at a time. A piece is called a "token" (often a
+word or part of a word). For every token the server can tell us the probability the model gave to
+the token it chose.
+
+Take this answer:
 
     {"category": "technical", "priority": "high", ...}
 
-the token `technical` might have probability 1.00 (certain) and `high` 0.60 (it nearly said
-`medium`). The probability of those chosen values is a cheap confidence signal: when the model
-hesitates between two categories, the gateway can hand the ticket to the stronger teacher model.
+Say the token `technical` had probability 1.00 (completely certain) and the token `high` had
+probability 0.60 (the model nearly wrote `medium` instead). Those probabilities tell us how sure the
+model was. When it hesitates, the gateway can hand the ticket to the stronger teacher model.
 
-Only the three decision fields are used. The summary and reply are free text, and a long sentence
-always contains some unlikely words, which says nothing about whether the triage is right.
+We only look at the three decision fields: category, priority and sentiment. The summary and the
+reply are free text, and a long sentence always contains a few unlikely words. That says nothing
+about whether the triage decision is right.
 """
 
 import math
 import re
-from collections.abc import Sequence
 
-FIELDS = ("category", "priority", "sentiment")
+DECISION_FIELDS = ["category", "priority", "sentiment"]
 
 
-def field_confidences(content: str, tokens: Sequence[tuple[str, float]]) -> dict[str, float]:
+def find_token_positions(tokens):
+    """For every token, work out where it starts and ends inside the full answer text.
+
+    `tokens` is a list of pairs: (the token's text, the log-probability the model gave it).
+    Returns a list of triples: (start, end, probability).
+    """
+    positions = []
+    start = 0
+    for token_text, log_probability in tokens:
+        end = start + len(token_text)
+        probability = math.exp(log_probability)  # log-probability -> normal probability (0 to 1)
+        positions.append((start, end, probability))
+        start = end
+    return positions
+
+
+def field_confidences(answer_text, tokens):
     """The probability of the chosen value for each decision field.
 
-    `tokens` is the answer as (token text, log-probability) pairs, in order. Their texts joined
-    must equal `content`, otherwise we cannot line them up and return nothing.
+    Returns a dictionary such as {"category": 1.0, "priority": 0.6, "sentiment": 0.99}.
+    Returns an empty dictionary if the tokens do not add up to the answer text.
     """
-    if "".join(text for text, _ in tokens) != content:
+    # Glue all the tokens back together. The result must equal the answer, otherwise we cannot
+    # line the tokens up with the text and we should not guess.
+    joined = ""
+    for token_text, log_probability in tokens:
+        joined = joined + token_text
+    if joined != answer_text:
         return {}
 
-    # Where each token starts and ends inside the answer text.
-    spans = []
-    position = 0
-    for text, logprob in tokens:
-        spans.append((position, position + len(text), math.exp(logprob)))
-        position = position + len(text)
+    positions = find_token_positions(tokens)
 
     confidences = {}
-    for field in FIELDS:
-        match = re.search(rf'"{field}"\s*:\s*"', content)
+    for field in DECISION_FIELDS:
+        # Find the place in the text where this field's value begins. For the field "category"
+        # we look for:  "category": "   (a quote, the name, a quote, a colon, optional spaces, a quote)
+        pattern = '"' + field + '"\\s*:\\s*"'
+        match = re.search(pattern, answer_text)
         if match is None:
             continue
-        value_start = match.end()  # the first character of the value, e.g. the "t" of "technical"
-        for start, end, probability in spans:
-            if start <= value_start < end:
+        value_start = match.end()  # the position of the first letter of the value, e.g. the "t" of "technical"
+
+        # Find the token that contains that position and use its probability.
+        for start, end, probability in positions:
+            if start <= value_start and value_start < end:
                 confidences[field] = probability
                 break
     return confidences
 
 
-def overall_confidence(confidences: dict[str, float]) -> float | None:
-    """One number for the whole answer: its weakest decision. None if we know nothing."""
-    if not confidences:
+def overall_confidence(confidences):
+    """One number for the whole answer: the weakest of its decisions (None if we know nothing)."""
+    # No probabilities were available, so we do not know how sure the model was.
+    if len(confidences) == 0:
         return None
-    return min(confidences.values())
+
+    # Start with the highest possible value, then keep the smallest one we see.
+    weakest = 1.0
+    for field in confidences:
+        if confidences[field] < weakest:
+            weakest = confidences[field]
+    return weakest

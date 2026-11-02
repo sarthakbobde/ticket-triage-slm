@@ -149,12 +149,8 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     # triage data ...
-    data = commands.add_parser("data", help="build and prepare datasets").add_subparsers(
-        dest="action", required=True
-    )
-    data.add_parser("download", help="download and profile the raw dataset").set_defaults(
-        handler=cmd_data_download
-    )
+    data = commands.add_parser("data", help="build and prepare datasets").add_subparsers(dest="action", required=True)
+    data.add_parser("download", help="download and profile the raw dataset").set_defaults(handler=cmd_data_download)
     splits = data.add_parser("splits", help="build test / val / train splits")
     splits.add_argument("--force", action="store_true", help="overwrite the frozen test set (do not)")
     splits.set_defaults(handler=cmd_data_splits)
@@ -164,9 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
     merge = data.add_parser("merge-hr", help="merge hr into customer_service in the teacher labels")
     merge.add_argument("--teacher", default="gpt-4.1")
     merge.set_defaults(handler=cmd_data_merge_hr)
-    data.add_parser("gold-sheet", help="build the hand-labelling page").set_defaults(
-        handler=cmd_data_gold_sheet
-    )
+    data.add_parser("gold-sheet", help="build the hand-labelling page").set_defaults(handler=cmd_data_gold_sheet)
     data.add_parser("training-data", help="build the Kaggle training files").set_defaults(
         handler=cmd_data_training_data
     )
@@ -180,9 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
     label.add_argument("--yes", action="store_true", help="allow paid calls to a remote endpoint")
     label.set_defaults(handler=cmd_label)
 
-    commands.add_parser("pilot-report", help="compare teacher candidates").set_defaults(
-        handler=cmd_pilot_report
-    )
+    commands.add_parser("pilot-report", help="compare teacher candidates").set_defaults(handler=cmd_pilot_report)
 
     # triage eval ...
     evaluate = commands.add_parser("eval", help="run and score models on the gold set").add_subparsers(
@@ -202,16 +194,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     # triage serve
     serve = commands.add_parser("serve", help="run the HTTP gateway (student first, teacher as fallback)")
-    serve.add_argument(
-        "--student", default="student_q4", help="section of configs/models.yaml for the small model"
-    )
+    serve.add_argument("--student", default="student_q4", help="section of configs/models.yaml for the small model")
     serve.add_argument(
         "--min-confidence", type=float, default=0.0, help="answers less sure than this go to the teacher"
     )
     serve.add_argument("--teacher", action="store_true", help="allow falling back to the paid teacher model")
-    serve.add_argument(
-        "--teacher-budget", type=int, default=0, help="the most paid teacher calls allowed this run"
-    )
+    serve.add_argument("--teacher-budget", type=int, default=0, help="the most paid teacher calls allowed this run")
     serve.add_argument("--yes", action="store_true", help="confirm that paid teacher calls are allowed")
     serve.add_argument("--host", default="127.0.0.1", help="127.0.0.1 = this machine only")
     serve.add_argument("--port", type=int, default=8000)
@@ -221,30 +209,20 @@ def build_parser() -> argparse.ArgumentParser:
     export = commands.add_parser("export", help="merge the adapter and import into Ollama").add_subparsers(
         dest="action", required=True
     )
-    merge_cmd = export.add_parser(
-        "merge", help="merge the LoRA adapter into the base model (needs the export extra)"
-    )
+    merge_cmd = export.add_parser("merge", help="merge the LoRA adapter into the base model (needs the export extra)")
     merge_cmd.add_argument("--adapter", default=str(paths.ADAPTERS / "qwen-triage-lora-v1"))
     merge_cmd.add_argument("--out", default=str(paths.MERGED_MODELS / "qwen-triage-v1"))
     merge_cmd.set_defaults(handler=cmd_export_merge)
     ollama_cmd = export.add_parser("ollama", help="import a GGUF file into Ollama")
-    ollama_cmd.add_argument(
-        "--gguf", required=True, help="path to the .gguf file, e.g. models/gguf/...-Q4_K_M.gguf"
-    )
+    ollama_cmd.add_argument("--gguf", required=True, help="path to the .gguf file, e.g. models/gguf/...-Q4_K_M.gguf")
     ollama_cmd.add_argument("--name", required=True, help="Ollama model name, e.g. ticket-triage-q4")
     ollama_cmd.set_defaults(handler=cmd_export_ollama)
 
-    calibrate = evaluate.add_parser(
-        "calibrate", help="choose the gateway confidence threshold (student runs locally)"
-    )
+    calibrate = evaluate.add_parser("calibrate", help="choose the gateway confidence threshold (student runs locally)")
     calibrate.add_argument("--student", default="student_q4", help="section of configs/models.yaml")
     calibrate.add_argument("--run", default="gateway-student-q4", help="name for the student answers file")
-    calibrate.add_argument(
-        "--teacher-run", default="teacher-gpt-4.1", help="an existing teacher run to reuse (free)"
-    )
-    calibrate.add_argument(
-        "--analyse-only", action="store_true", help="skip asking the student, use the saved file"
-    )
+    calibrate.add_argument("--teacher-run", default="teacher-gpt-4.1", help="an existing teacher run to reuse (free)")
+    calibrate.add_argument("--analyse-only", action="store_true", help="skip asking the student, use the saved file")
     calibrate.set_defaults(handler=cmd_eval_calibrate)
 
     return parser
