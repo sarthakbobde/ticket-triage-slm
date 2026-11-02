@@ -137,7 +137,11 @@ def products_f1(true_names, predicted_names):
     predicted_set = clean_product_names(predicted_names)
     if len(true_set) == 0 and len(predicted_set) == 0:
         return 1.0
-    both = len(true_set & predicted_set)
+    # How many products appear in both lists?
+    both = 0
+    for name in true_set:
+        if name in predicted_set:
+            both = both + 1
     if both == 0:
         return 0.0
     precision = both / len(predicted_set)

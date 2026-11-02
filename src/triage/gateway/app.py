@@ -24,6 +24,10 @@ def create_app(service):
 
     @app.post("/triage", response_model=TriageResponse)
     def triage(body: TriageRequest, request: Request):
+        # The two ": Something" notes above are the one place where type notes are REQUIRED: FastAPI reads
+        # them to know what to hand us. "body: TriageRequest" means "the JSON the caller sent, checked
+        # against the TriageRequest form". "request: Request" means "the raw request", so we can read headers.
+
         # An empty ticket is not a ticket. 422 is the standard code for "your data is wrong".
         if body.text.strip() == "":
             raise HTTPException(status_code=422, detail="text must not be empty")

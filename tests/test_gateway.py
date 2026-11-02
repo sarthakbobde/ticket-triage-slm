@@ -19,7 +19,13 @@ UNSURE = (ANSWER, tokens_for(ANSWER, {"priority": 0.5}))  # the student hesitate
 
 
 def make_service(student_answers, teacher_answers=None, min_confidence=0.0, budget=5):
-    teacher = FakeClient(teacher_answers) if teacher_answers is not None else None
+    # No teacher answers given means: this service has no teacher at all.
+    teacher = None
+    teacher_budget = 0
+    if teacher_answers is not None:
+        teacher = FakeClient(teacher_answers)
+        teacher_budget = budget
+
     service = TriageService(
         student_client=FakeClient(student_answers),
         student_model="student",
@@ -28,7 +34,7 @@ def make_service(student_answers, teacher_answers=None, min_confidence=0.0, budg
         teacher_client=teacher,
         teacher_endpoint=ModelEndpoint(base_url="http://localhost:1/v1"),
         teacher_model="teacher",
-        teacher_budget=budget if teacher is not None else 0,
+        teacher_budget=teacher_budget,
     )
     return service, teacher
 
@@ -180,7 +186,10 @@ def test_simulation_moves_unsure_tickets_to_the_teacher():
         "a": {"category": "billing", "priority": "low", "sentiment": "neutral"},
         "b": {"category": "technical", "priority": "high", "sentiment": "negative"},
     }
-    teacher = {k: dict(v) for k, v in gold.items()}  # the teacher is always right
+    # The teacher is always right: its answers are copies of the gold labels.
+    teacher = {}
+    for ticket_id in gold:
+        teacher[ticket_id] = dict(gold[ticket_id])
     student = {
         "a": {
             "answer": {"category": "billing", "priority": "low", "sentiment": "neutral"},
@@ -192,7 +201,10 @@ def test_simulation_moves_unsure_tickets_to_the_teacher():
             "confidence": 0.6,
         },
     }
-    rows = {row["threshold"]: row for row in simulate(student, teacher, gold)}
+    # Put the rows in a dictionary keyed by threshold, so we can look each one up.
+    rows = {}
+    for row in simulate(student, teacher, gold):
+        rows[row["threshold"]] = row
     assert rows[0.0]["to_teacher"] == 0 and rows[0.0]["category"] == 0.5  # student only: one wrong
     assert rows[0.7]["to_teacher"] == 0.5 and rows[0.7]["category"] == 1.0  # ticket b went to the teacher
     assert rows[0.99]["to_teacher"] == 0.5  # ticket a (confidence 0.99) is not below 0.99, so it stays
