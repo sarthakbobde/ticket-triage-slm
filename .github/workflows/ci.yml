@@ -10,7 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Same uv and Python as the machine that wrote uv.lock. A newer uv cannot read a lockfile written by
+      # uv 0.2.x (it failed with: invalid type: string "http", expected a sequence).
       - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.2.20"
+          python-version: "3.12"
       - name: Install dependencies
         run: uv sync --extra serve
       - name: Lint
