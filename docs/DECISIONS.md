@@ -29,6 +29,7 @@ Record): the context, the options considered, what was chosen, and the consequen
 | [014](#adr-014) | Base model = Qwen2.5-3B-Instruct, chosen from an untrained baseline vs Llama 3.2 3B | Accepted | 2026-10-31 |
 | [015](#adr-015) | Restructure into an installable package with one `triage` CLI, tests, lint and CI | Accepted | 2026-10-31 |
 | [016](#adr-016) | Serve the fine-tune as Q4_K_M GGUF through Ollama | Accepted | 2026-11-01 |
+| [017](#adr-017) | Gateway: student first; teacher only on invalid output or error; confidence routing off by default | Accepted | 2026-11-02 |
 
 ## Template
 
@@ -685,3 +686,39 @@ Q5_K_M is the fallback if a later, larger gold set shows Q4 losing accuracy.
 - ⚠️ 200 gold tickets cannot separate quantization levels that differ by a few points.
 - ⚠️ Remaining label disagreements (`customer_service`, priority) are inherited from the teacher (Step 08 finding).
 - ⚠️ Ollama 0.40 imports only finished GGUF files; conversion needs llama.cpp's tools (b12024).
+
+---
+
+<a id="adr-017"></a>
+## ADR-017 — Gateway routing: confidence is reported, routing on it is off by default
+**Status:** Accepted · **Date:** 2026-11-02 · **Step:** 11
+
+### Context
+The gateway (`triage serve`) asks the local model first and can fall back to the paid teacher. It
+can route on three triggers: the answer is not valid JSON, the call fails, or the model's confidence
+(the weakest probability among its category, priority and sentiment values) is below a threshold.
+`triage eval calibrate` simulated each threshold on the 200 gold tickets using the teacher answers
+from Step 08 (table in `docs/steps/11-gateway.md`).
+
+### Options
+1. Always route low-confidence tickets to the teacher (threshold about 0.7: 24% of tickets, about $0.50 per 1,000).
+2. **Route to the teacher only when the answer is unusable (invalid or error). Report the confidence,
+   but do not act on it unless asked (`--min-confidence`, default 0).**
+3. Never use the teacher.
+
+### Decision
+Option 2.
+- Confidence does carry information: 0.86 average when the student agrees with the teacher, 0.71 when
+  they differ.
+- But routing on it did not improve accuracy against the gold labels: at most +2.5 points on category
+  (5 tickets), nothing on priority, and **sentiment fell from 80% to 70.5%** as more tickets went to the teacher.
+- The remaining errors are mostly disagreements about label definitions (Step 08), which confidence cannot detect.
+- Invalid output was 0 of 200 on the gold set, so the fallback for unusable answers is a safety net, not a major cost.
+
+### Consequences
+- ✅ The default gateway costs nothing and is as accurate as the hybrid on this evidence.
+- ✅ Every response still carries `confidence`, so callers can flag uncertain tickets for human review.
+- ✅ The threshold can be turned on later with `--min-confidence` once there is a larger, better-agreed gold set.
+- ⚠️ 200 gold tickets cannot resolve differences of a few points; revisit with more data.
+- ⚠️ The cost estimate ($0.002 per teacher call) uses assumed, unverified prices.
+- ⚠️ The gateway answers one request at a time on the single GPU; throughput limits are not tested.

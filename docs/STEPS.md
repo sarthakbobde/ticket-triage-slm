@@ -23,8 +23,8 @@ Each step has a doc in `docs/steps/`. Tick the box when done.
 
 ## Phase 4 — Inference
 - [x] 🤝 **09 Merge + quantize to GGUF** — Q4/Q5/Q8, measure quality loss per level. → [09-gguf-ollama.md](steps/09-gguf-ollama.md)
-- [ ] 🧑 **10 Serve locally** — llama.cpp / Ollama on the GTX 1650.
-- [ ] 🤝 **11 Gateway** — FastAPI, schema validation, fallback to teacher when low-confidence, logging.
+- [x] 🧑 **10 Serve locally** — llama.cpp / Ollama on the GTX 1650. → [10-serve-locally.md](steps/10-serve-locally.md)
+- [x] 🤝 **11 Gateway** — FastAPI, schema validation, fallback to teacher when low-confidence, logging. → [11-gateway.md](steps/11-gateway.md)
 
 ## Phase 5 — Show it off
 - [ ] 🤝 **12 Cost & latency report** — $/1k tickets vs API, p50/p95 latency, quality table.
